@@ -84,6 +84,14 @@ Update docs for behavior, public interface, config, environment, deployment,
 dependency, package-script, schema, migration, architecture, ownership, and
 validation changes.
 
+When implementing from a write-spec design spec, documentation updates are the
+plan's **final work unit**. Do not edit canonical docs during spec writing, and
+do not expect the spec to list which docs to update — canonical docs explain
+current truth, so the list is derived at the end of implementation from the real
+diff. Run `docdriven-audit` in change-scoped mode over the plan's diff range to
+produce that list, then apply it under this skill's workflow. The spec's
+**Affected domains** tell the audit which route shards to load.
+
 After any large LLM task, multi-step implementation, refactor, migration, or
 architectural change, update the relevant DocDriven docs before claiming the
 work complete. Big changes that leave the docs stale are unfinished changes.
@@ -108,6 +116,6 @@ When finishing DocDriven work, report:
 
 ## References
 
-- Read `../_shared/docdriven-structure.md` for the default documentation model.
-- Read `../_shared/agent-operating-contract.md` for route-table requirements.
-- Read `../_shared/writing-style.md` before writing or editing docs.
+- Read `_shared/docdriven-structure.md` for the default documentation model.
+- Read `_shared/agent-operating-contract.md` for route-table requirements.
+- Read `_shared/writing-style.md` before writing or editing docs.

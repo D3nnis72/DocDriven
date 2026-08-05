@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { listDetectedSignals, scanProject } from "../../_shared/operational-scan.mjs";
+import { listDetectedSignals, scanProject } from "../_shared/operational-scan.mjs";
 
 const args = process.argv.slice(2);
 const root = valueAfter("--root") || process.cwd();

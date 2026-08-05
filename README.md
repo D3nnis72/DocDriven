@@ -176,6 +176,25 @@ Docs/
     `-- README.md
 ```
 
+### Shared Skill Files
+
+`npx skills` installs one skill directory at a time, so a skill can only rely on
+files inside its own folder. `skills/_shared/` is the canonical source, and each
+skill carries a generated copy of the shared files it uses in
+`skills/<skill>/_shared/`.
+
+Edit `skills/_shared/`, then run:
+
+```bash
+node scripts/sync-shared.mjs
+```
+
+Two checks keep this honest and run in CI:
+
+- `node scripts/sync-shared.mjs --check` fails when a copy drifts from the source.
+- `node scripts/verify-install.mjs` copies each skill out of the repo on its own
+  and fails when a reference or script import no longer resolves.
+
 ## Scalable Routing
 
 Large projects should not have one giant routing file. DocDriven uses a small

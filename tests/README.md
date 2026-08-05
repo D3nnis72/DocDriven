@@ -21,6 +21,8 @@ Validation targets:
 - audits warn on weak architecture contracts and missing structure/configuration/reuse documentation
 - audit reports missing files, oversized docs, and invalid route tables
 - skills can be listed or installed by `npx skills`
+- vendored `skills/<skill>/_shared/` copies match `skills/_shared/`
+- each skill resolves its references and runs when installed on its own
 
 Fixture docs may intentionally contain scaffold warnings. Audit errors should be
 treated as failures.

@@ -51,5 +51,5 @@ Prefer running `scripts/create-project-skill.mjs` instead of hand-writing the lo
 
 ## References
 
-- Read `../_shared/repo-local-skill-template.md`.
-- Read `../_shared/agent-operating-contract.md`.
+- Read `_shared/repo-local-skill-template.md`.
+- Read `_shared/agent-operating-contract.md`.

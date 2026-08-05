@@ -1,0 +1,19 @@
+name: skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check vendored shared files
+        run: node scripts/sync-shared.mjs --check
+      - name: Verify skills install standalone
+        run: node scripts/verify-install.mjs

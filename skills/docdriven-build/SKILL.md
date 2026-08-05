@@ -56,6 +56,6 @@ and structure manually to match the project.
 
 ## References
 
-- Read `../_shared/docs-tree-template.md`.
-- Read `../_shared/writing-style.md`.
-- Read `../_shared/agent-operating-contract.md`.
+- Read `_shared/docs-tree-template.md`.
+- Read `_shared/writing-style.md`.
+- Read `_shared/agent-operating-contract.md`.
