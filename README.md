@@ -1,7 +1,8 @@
 # DocDriven
 
 DocDriven gives your agent a compact, always-current documentation map of your
-codebase.
+codebase — organized as a lightweight knowledge graph with explicit identity,
+relationships, and dependency-aware propagation.
 
 We do not care about pretty documentation. We care that the agent understands
 the system.
@@ -9,12 +10,12 @@ the system.
 That is the whole point.
 
 The agent needs the smallest amount of current context that lets it write the
-best possible code. Not more. 
+best possible code. Not more.
 
-DocDriven keeps documentation compact, routed, and current. Agents read the
-smallest useful context, make the change, update the affected docs, and leave
-validation evidence. Every update enriches the next agent run, because the
-project teaches the agent while work is happening.
+DocDriven keeps documentation compact, routed, and current. Every knowledge doc
+has a stable identity and explicit relationships. When something changes, the
+agent knows exactly what else is affected — not by guessing, but by traversing
+the dependency graph.
 
 The failure mode is obvious: if the agent does not understand the codebase, it
 guesses. In large projects that means invented types, duplicated decisions,
@@ -23,18 +24,22 @@ fit.
 
 DocDriven exists to stop that.
 
-DocDriven treats documentation as project infrastructure.
+## The Big Idea
 
-It is built for long-lived projects. The agent should not bring a new personal
-architecture to every task. It should learn the project's documented structure,
-style, config flow, and validation rules, then make the next change fit that
-system.
+Markdown behaves like a lightweight knowledge graph.
 
-The skill must stay adaptive. Before creating or judging docs, the agent should
-ask what kind of project it is in, how large and mature it is, where the project
-appears to be going, and what future agents will need to avoid bad changes.
-Small projects need compact docs. Very large projects need stronger routing,
-clearer ownership, reproducible checks, and explicit update discipline.
+Every important doc has a stable identity (`id: frontend.architecture`) that
+survives renames and restructuring. Docs declare explicit relationships
+(`extends`, `includes`, `dependsOn`, `derivedFrom`) that form a dependency graph.
+Routes reference knowledge IDs instead of file paths. After a change, the agent
+traverses the graph to find everything that needs updating.
+
+This means:
+
+- **No guessing** which docs are related — the relationships are declared.
+- **No duplication** — each concept has one canonical owner, everything else references it.
+- **No stale views** — derived docs explicitly declare their sources, so staleness is mechanically detectable.
+- **No manual propagation** — the graph tells the agent exactly what to update after a change.
 
 ## Quickstart
 
@@ -52,16 +57,15 @@ npx skills add D3nnis72/DocDriven --skill docdriven
 
 Then, in a project:
 
-1. Run `docdriven-init`.
-2. Review the detected project dynamics.
-3. Run `docdriven-build`.
-4. Work normally with `docdriven`.
-5. Run `docdriven-audit` before major merges or periodically.
+1. Run `docdriven-setup`.
+2. Review the detected project dynamics and generated structure.
+3. Work normally with `docdriven`.
+4. Run `docdriven-audit` before major merges or periodically.
 
 If you do not know how to start, give this README to your coding agent and tell
 it to set up DocDriven for the project. The important part is that it keeps the
-system in Markdown files, updates them while it works, and uses the route graph
-before changing code.
+system in Markdown files, updates them while it works, and uses the knowledge
+graph before changing code.
 
 ## How It Works
 
@@ -69,94 +73,160 @@ It starts when an agent enters a project. Instead of jumping straight into code,
 the agent first asks: what kind of work is this, and where is the smallest
 reliable context for it?
 
-`docdriven-init` scans the repository. It looks at package usage, frameworks,
-scripts, source layout, config files, validation commands, and uncertain areas.
-From that scan, it creates a repo-local DocDriven skill that tells future agents
-how this specific project works.
+`docdriven-setup` scans the repository. It looks at package usage, frameworks,
+scripts, source layout, config files, and validation commands. From that scan, it
+creates:
 
-`docdriven-build` creates the documentation graph. Humans get short orientation
-docs. Agents get route files. The project gets canonical knowledge docs. Tmp
-plans and notes stay separate until they are promoted into current truth.
+- A `Docs/` tree with frontmatter identity on every doc
+- Route shards that reference knowledge IDs (not file paths)
+- A knowledge index mapping IDs to files
+- A repo-local skill telling future agents how to work in this project
 
-When an agent works on the project, it reads the route graph, loads the smallest
-relevant route shard, then reads only the docs and code areas needed for the
-task. After changing code, it updates the affected docs in the same task. If
-something is missing, stale, or uncertain, it records the gap instead of hiding
-it.
+When an agent works on the project, it reads the route graph, resolves the
+relevant knowledge IDs, reads canonical docs first, then follows relationships
+for depth. After changing code, it propagates through the dependency graph:
+update the canonical source, then specializations, then views, then flag
+consumers. If something is uncertain, it records the gap.
 
-`docdriven-audit` checks whether the graph is still current. It looks for stale
-routes, missing docs, weak validation, unresolved placeholders, orphan knowledge
-docs, weak architecture contracts, undocumented structure signals, missing
-configuration-pattern documentation, and route/code drift.
-
-Audit should be reproducible inside the target project. The preferred shape is
-a local `scripts/audit-docdriven.mjs` entrypoint, backed by the installed
-DocDriven audit implementation, plus a documented command such as
-`docs:audit` when the project has package scripts.
-
-There is more to it, but that is the core: DocDriven gives agents a shared,
-continuously maintained context layer. The agent does not need to remember the
-whole repository. It needs a reliable route to the right truth.
-
-This matters for safety and economics. Context is expensive. Bad context is more
-expensive. If agents do not understand the system, they waste tokens, write more
-code than needed, miss existing abstractions, and make changes that are harder
-to review. DocDriven makes understanding the codebase part of the job.
+`docdriven-audit` checks whether the graph is structurally sound. It validates
+frontmatter integrity, relationship coherence, route resolution, and content
+quality. In change-scoped mode, it takes a diff and traverses the graph to find
+every doc the change made false.
 
 ## The Core Model
 
-DocDriven separates executable truth from explanatory truth.
+DocDriven separates executable truth from explanatory truth, organized as a
+knowledge graph.
 
 - Code, tests, configs, schemas, migrations, and build outputs are executable evidence.
-- `Docs/knowledge/` contains the canonical explanation of current project truth.
-- `Docs/human/` contains short human-facing orientation and operating docs.
-- `Docs/agent/` contains the protocol agents use to find and update context.
-- `Docs/tmp/` contains temporary plans, visions, notes, and working material.
+- `Docs/knowledge/` contains canonical explanation — each doc has `authority: canonical`.
+- `Docs/human/` contains derived views for people — each doc has `derivedFrom` pointing to its sources.
+- `Docs/agent/` contains the routing protocol — manifest, routes, knowledge index.
+- `Docs/tmp/` contains temporary material — not truth until promoted.
 
 The rule:
 
-> Code and checks prove truth. Knowledge explains truth. Human docs summarize it.
-> Agent docs route to it. Tmp docs are not truth until promoted.
+> Code and checks prove truth. Knowledge explains truth. Human docs are derived
+> views. Agent docs route to it. Every concept has one canonical owner.
 
-## The Basic Workflow
+## Knowledge Identity
 
-1. `docdriven-init` studies the project dynamics.
-2. It generates `.agents/skills/project-docdriven/SKILL.md`.
-3. `docdriven-build` creates the `Docs/` tree, manifest, route shards, init scan, and starter docs.
-4. `docdriven` guides normal work: read route, load scoped docs, inspect code, change code and docs together.
-5. `docdriven-audit` checks drift, stale routes, weak validation, placeholders, orphan docs, and missing coverage.
+Every durable doc has YAML frontmatter:
 
-The agent workflow is:
+```yaml
+---
+id: frontend.architecture
+type: architecture
+scope: frontend
+authority: canonical
+extends: design.system
+includes:
+  - frontend.testing
+  - frontend.state
+dependsOn:
+  - config.frontend
+updateWhen:
+  - shared component architecture changes
+  - state management pattern changes
+---
+```
+
+Relationship types:
+
+| Relationship | Meaning |
+|---|---|
+| `extends` | I am a specialization of this base concept |
+| `includes` | My full picture involves these sub-concepts |
+| `dependsOn` | I assume this other knowledge is true |
+| `derivedFrom` | I summarize or reformat these canonical sources |
+
+The key principle: **a concept is documented once in its canonical owner. Other
+docs reference it instead of restating it.**
+
+## Route Schema v2
+
+Routes reference knowledge IDs instead of repeating file paths:
+
+```json
+{
+  "schemaVersion": 2,
+  "area": "frontend",
+  "routes": [
+    {
+      "id": "frontend",
+      "priority": 100,
+      "taskTypes": ["frontend change", "UI component", "styling"],
+      "knowledge": ["frontend.architecture", "design.system"],
+      "codeAreas": ["src/frontend/**"],
+      "changeSignals": ["shared UI components", "theme"],
+      "validation": ["test"],
+      "owner": "unknown"
+    }
+  ]
+}
+```
+
+- `knowledge` — which knowledge IDs this route concerns
+- `changeSignals` — what kinds of code changes should trigger a doc review
+- No more `readFirst`, `canonicalDocs`, or `updateDocs` — the docs declare their own roles
+
+## The Workflow
 
 ```text
-skill -> manifest -> route shard -> canonical docs -> code -> docs update -> validation -> audit evidence
+Task → Route → Knowledge IDs → Canonical Docs → Work → Propagate → Validate
 ```
+
+After every change, the agent propagates through the graph:
+
+1. Update the affected canonical doc
+2. Follow `extends` → update specializations
+3. Follow `includes` → verify parent coherence
+4. Follow `derivedFrom` (reverse) → update derived views
+5. Follow `dependsOn` (reverse) → flag consumers for review
+
+This is not optional. If a dependent exists, the agent verifies or updates it.
+If uncertain, it records the gap.
 
 ## What's Inside
 
 ### Skills
 
-- `docdriven`: the daily Documentation Driven Development workflow.
-- `docdriven-init`: scans a repository and generates the repo-local DocDriven skill.
-- `docdriven-build`: creates the initial `Docs/` structure and route graph.
-- `docdriven-audit`: checks documentation drift, routing, validation, and coverage.
+| Skill | When | Purpose |
+|-------|------|---------|
+| `docdriven-setup` | Once per project | Scan repo, create docs structure with knowledge graph |
+| `docdriven` | Every task | Read-before, work, propagate-after |
+| `docdriven-audit` | Periodic / CI | Validate structure, graph coherence, and drift |
+
+### Validation Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `check-frontmatter` | Every doc has valid identity, types, required fields |
+| `check-graph` | Relationships are coherent (no cycles, bidirectional, valid targets) |
+| `check-impact` | Given a changed ID, shows what else needs review |
+
+```bash
+node scripts/check-frontmatter.mjs --root .
+node scripts/check-graph.mjs --root .
+node scripts/check-impact.mjs --changed frontend.architecture
+```
 
 ### Generated Project Structure
 
 ```text
 Docs/
 |-- README.md
-|-- human/
-|   |-- overview.md
-|   |-- setup.md
-|   |-- commands.md
-|   |-- architecture.md
+|-- human/                      (derived views for people)
+|   |-- overview.md             derivedFrom: [architecture.general, features.general]
+|   |-- setup.md                derivedFrom: [operations.general]
+|   |-- commands.md             derivedFrom: [operations.general]
+|   |-- architecture.md         derivedFrom: [architecture.general]
 |   `-- adaptive files when detected
-|-- agent/
-|   |-- manifest.json
+|-- agent/                      (routing protocol)
+|   |-- manifest.json           schema v2, points to route shards
+|   |-- knowledge-index.json    maps IDs to file paths
 |   |-- init-scan.md
 |   |-- context-map.md
-|   |-- update-protocol.md
 |   |-- validation.md
 |   |-- writing-style.md
 |   |-- naming.md
@@ -166,7 +236,7 @@ Docs/
 |       |-- features.json
 |       |-- interfaces.json
 |       `-- operations.json
-|-- knowledge/
+|-- knowledge/                  (canonical truth, each doc has id + authority)
 |   |-- README.md
 |   |-- architecture/
 |   |-- features/
@@ -178,10 +248,8 @@ Docs/
 
 ### Shared Skill Files
 
-`npx skills` installs one skill directory at a time, so a skill can only rely on
-files inside its own folder. `skills/_shared/` is the canonical source, and each
-skill carries a generated copy of the shared files it uses in
-`skills/<skill>/_shared/`.
+`npx skills` installs one skill directory at a time. `skills/_shared/` is the
+canonical source, and each skill carries a vendored copy.
 
 Edit `skills/_shared/`, then run:
 
@@ -191,114 +259,76 @@ node scripts/sync-shared.mjs
 
 Two checks keep this honest and run in CI:
 
-- `node scripts/sync-shared.mjs --check` fails when a copy drifts from the source.
-- `node scripts/verify-install.mjs` copies each skill out of the repo on its own
-  and fails when a reference or script import no longer resolves.
+- `node scripts/sync-shared.mjs --check` fails when a copy drifts.
+- `node scripts/verify-install.mjs` copies each skill out and verifies imports resolve.
 
-## Scalable Routing
+## Why This Architecture
 
-Large projects should not have one giant routing file. DocDriven uses a small
-root manifest and focused route shards.
+The knowledge graph solves three problems that flat documentation cannot:
 
-- `Docs/agent/manifest.json` points to route shards.
-- `Docs/agent/routes/*.json` maps task types to docs, code areas, update targets, owners, and validation.
-- `Docs/agent/context-map.md` is the readable route view.
-- `Docs/agent/init-scan.md` records detected project dynamics and uncertain items.
-- `Docs/agent/gaps.md` records missing routes, unknown ownership, and docs debt.
+**1. Propagation.** When `frontend.architecture` changes, what else becomes
+false? Without explicit relationships, the agent has to grep and guess. With the
+graph, it traverses `extends`, `derivedFrom`, and `dependsOn` to get a complete
+list mechanically.
 
-Route shards can be split by package, domain, feature area, or interface area.
-The goal is low-token context loading: agents read the index, choose a shard,
-and load only the relevant project truth.
+**2. Duplication.** If two docs explain the same concept, which one is truth?
+Without identity, you get drift. With `authority: canonical` on exactly one doc
+and `derivedFrom` on everything else, duplication is structurally prevented.
+
+**3. Staleness.** Is this summary still current? Without `derivedFrom`, you
+cannot tell. With it, you can check whether the source has changed since the
+view was last updated — today by convention, later by automation.
+
+## Migration Path
+
+This system is designed as version zero of a future knowledge fabric:
+
+```text
+Today:                          Later:
+─────                           ─────
+Markdown frontmatter      →     Artifact database
+Route JSON                →     Query API
+Explicit links            →     Graph database
+Git diff + agent          →     Automated invalidation
+check-impact script       →     MCP server
+```
+
+The conceptual model remains the same. `id: frontend.architecture` becomes a
+database row. `derivedFrom: [frontend.architecture]` becomes a graph edge.
+Nothing is thrown away.
 
 ## Adaptive Architecture
 
-DocDriven treats architecture as an adaptive contract. The generated structure
-is a starting map, not a mandatory project shape.
+Architecture docs describe how the current project is organized. They are an
+adaptive contract, not a template.
 
-Architecture docs should explain how the current project is organized, where
-authoritative code contracts live, which modules own configuration and adapter
-boundaries, what dependency direction is allowed, and which coding patterns are
-durable. They should not copy type, schema, or interface definitions from code.
-They should also explain where reusable components, hooks, helpers, adapters,
-test helpers, and shared project primitives live when the project has them.
+Architecture docs should explain:
 
-Agents must not hardcode favorite folders, architecture styles, config flows,
-or coding conventions. If the project has a documented rule, follow it. If the
-rule is missing, inspect nearby code, choose the smallest consistent change,
-and record the gap instead of silently starting a parallel pattern.
+- current system shape and boundaries
+- dependency direction and import rules
+- structural ownership for code, config, contracts, and packages
+- reuse and composition patterns
+- durable coding patterns specific to this project
 
-New folders, docs, or route shards are justified by evidence: repeated
-responsibility, unclear ownership, files that outgrow one purpose, boundary
-changes, hardcoded runtime settings, shared contracts, or conventions important
-enough to validate.
-
-Reuse follows the same rule. Prefer existing project primitives over new
-one-off implementations. Keep feature-local code local until repeated use,
-stable responsibility, or a documented composition pattern justifies promotion.
-
-## Why This Exists
-
-Most project documentation tries to serve too many readers at once.
-
-Humans need quick orientation:
-
-- What is this project?
-- How do I set it up?
-- Which environment variables, config files, services, and accounts do I need?
-- How do I run, test, build, and deploy it?
-- What is the architecture in simple terms?
-- What should I know before operating or changing it?
-
-Agents need precise routing:
-
-- What kind of task is this?
-- Which docs must be read first?
-- Which files contain the canonical explanation?
-- Which code areas are likely affected?
-- Which docs must be updated after the change?
-- Which command or evidence proves the change?
-
-DocDriven separates those needs without duplicating project truth.
-
-The main failure mode is not "there are no docs." The main failure mode is that
-agents cannot tell which docs matter, whether they are current, and what code
-they own. In large projects, that turns into bad engineering fast: duplicated
-models, invented interfaces, stale assumptions, missed validation, and changes
-that look plausible but do not fit the system.
-
-DocDriven exists to stop that. It gives agents a compact route into the project
-instead of asking them to search blindly.
+Agents must not hardcode favorite folders, architecture styles, or coding
+conventions. If the project has a documented rule, follow it. If the rule is
+missing, inspect nearby code, choose the smallest consistent change, and record
+the gap.
 
 ## Philosophy
 
 - Documentation is infrastructure.
+- Markdown is a lightweight knowledge graph.
+- Every concept has one canonical owner.
+- Relationships are explicit, not implied.
+- Propagation is structural, not ad-hoc.
 - The system is agent-first.
-- Human docs should orient; agent docs should route.
+- Human docs are derived views, not independent truth.
 - Compact, current, routed context beats long prose.
-- Current truth beats historical explanation.
 - Code and checks are evidence.
-- Knowledge docs explain the current system.
-- Architecture docs preserve long-term project continuity.
-- Every concept should have one canonical home.
 - Agents should read the smallest useful context, not the whole docs folder.
 - Agents should follow documented project style, not generic agent taste.
-- Agents should reuse documented project primitives before creating parallel implementations.
-- Meaningful code changes should update docs in the same task.
-- Large LLM-driven tasks, refactors, migrations, and architecture changes are
-  not complete until the affected DocDriven docs are current.
+- Meaningful code changes propagate through the knowledge graph in the same task.
 - Missing docs are part of the work, not a later cleanup.
 - Uncertainty should be recorded, not hidden.
-- Audits should detect drift, not just lint Markdown.
-- We care less about documentation as an artifact and more about whether the
-  next agent can understand the codebase quickly and safely.
-
-## Updating
-
-DocDriven works best when it is used continuously.
-
-Run `docdriven-audit` before major merges, after large refactors, after changing
-package scripts or validation commands, and whenever agents start getting lost.
-
-The more the project changes, the more important the route graph becomes.
-The larger the project becomes, the more important local audit commands,
-route ownership, and post-change documentation updates become.
+- Audits should validate graph integrity, not just lint Markdown.

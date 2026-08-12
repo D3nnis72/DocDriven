@@ -3,475 +3,250 @@
 DocDriven is a Documentation Driven Development system for agents and humans.
 Its purpose is not to create more documentation. Its purpose is to make a
 project easier to understand, change, verify, and maintain by using
-documentation as the shared context layer.
-
-DocDriven treats documentation as project infrastructure. Before an agent
-changes code, it should know which documentation describes the relevant part of
-the system. After an agent changes code, it should update the affected
-documentation in the same task.
-
-DocDriven is for long-lived projects. It should preserve project continuity:
-agents follow the project's documented architecture, style, configuration flow,
-and validation reality instead of introducing generic preferences on each task.
+documentation as a shared context layer organized as a lightweight knowledge
+graph.
 
 ## Core Idea
 
-DocDriven separates executable truth from explanatory truth.
+Documentation is a knowledge graph, not a folder of files.
 
-- Code, tests, configs, schemas, migrations, and build outputs are executable
-  evidence.
-- `knowledge/` contains the canonical explanation of current project truth.
-- `human/` contains short human-facing orientation and operating docs.
-- `agent/` contains the protocol agents use to find and update context.
-- `tmp/` contains temporary plans, visions, notes, and working material.
+Every important doc has a stable identity that survives renames. Docs declare
+explicit relationships that form a dependency graph. Routes reference knowledge
+IDs instead of file paths. After a change, the agent traverses the graph to
+find everything that needs updating.
 
-The key rule is:
+This means Markdown behaves like a database — but one you can read, edit, grep,
+and version with git. The frontmatter is the schema. The relationships are the
+edges. The docs are the nodes.
 
-> Code and checks prove truth. Knowledge explains truth. Human docs summarize
-> it. Agent docs route to it. Tmp docs are not truth until promoted.
+## The Problem
 
-## Why This Exists
+Most project documentation fails in one of three ways:
 
-Most project documentation tries to serve too many readers at once. Humans need
-short orientation, setup, commands, and architecture summaries. Agents need
-precise context routing, update rules, validation commands, and small scoped
-files that can be loaded without flooding the context window.
+1. **Duplication.** The same fact exists in multiple places. When one is updated,
+   the others drift. Agents cannot tell which is canonical.
 
-DocDriven separates these needs without duplicating project truth.
+2. **Implicit relationships.** A summary depends on an architecture doc, but
+   nothing declares that dependency. When the architecture changes, the summary
+   becomes silently stale.
 
-For humans, documentation should answer:
+3. **Manual propagation.** After a change, the agent guesses which docs to
+   update by scanning filenames and content. In large projects, it misses things.
 
-- What is this project?
-- How do I set it up?
-- How do I run, test, build, and deploy it?
-- What is the architecture in simple terms?
-- What should I know before operating or changing it?
+DocDriven solves all three structurally:
 
-For agents, documentation should answer:
+- **One canonical owner per concept** (`authority: canonical`).
+- **Explicit relationships** (`extends`, `includes`, `dependsOn`, `derivedFrom`).
+- **Mechanical propagation** via graph traversal after every change.
 
-- What kind of task is this?
-- Which docs must be read first?
-- Which files contain the canonical truth?
-- Which constraints must be preserved?
-- Which docs must be updated after the change?
-- Which command proves the change?
+## Architecture
 
-## Default Documentation Structure
+### Documentation Surfaces
 
-The default structure is intentionally small.
+DocDriven separates executable truth from explanatory truth:
 
-```text
-Docs/
-├── README.md
-├── human/
-│   ├── overview.md
-│   ├── setup.md
-│   ├── commands.md
-│   └── architecture.md
-├── agent/
-│   ├── context-map.md
-│   ├── update-protocol.md
-│   ├── validation.md
-│   ├── writing-style.md
-│   ├── naming.md
-│   └── gaps.md
-├── knowledge/
-│   ├── README.md
-│   ├── architecture/
-│   ├── features/
-│   ├── interfaces/
-│   └── operations/
-└── tmp/
-    ├── README.md
-    ├── visions/
-    ├── plans/
-    └── notes/
+- Code, tests, configs, schemas are executable evidence.
+- `knowledge/` contains canonical explanation with `authority: canonical`.
+- `human/` contains derived views with `derivedFrom` pointing to sources.
+- `agent/` contains routing protocol (manifest, routes, knowledge index).
+- `tmp/` contains temporary material, not truth.
+
+### Knowledge Identity
+
+Every durable doc has YAML frontmatter:
+
+```yaml
+---
+id: frontend.architecture
+type: architecture
+scope: frontend
+authority: canonical
+includes:
+  - frontend.testing
+  - frontend.state
+dependsOn:
+  - design.system
+updateWhen:
+  - shared component architecture changes
+---
 ```
 
-Optional folders can be added only when the project needs them:
+IDs are stable identities. If you rename `knowledge/frontend/architecture.md` to
+`knowledge/ui/arch.md`, the conceptual identity `frontend.architecture` survives.
+The knowledge index is updated, but every relationship pointing to that ID
+remains valid.
 
-```text
-Docs/knowledge/data/
-Docs/knowledge/domains/
-Docs/decisions/
+### Relationship Types
+
+| Relationship | Direction | Meaning |
+|---|---|---|
+| `extends` | child → parent | I am a specialization of this base concept |
+| `includes` | parent → children | My full picture involves these sub-concepts |
+| `dependsOn` | consumer → dependency | I assume this other knowledge is true |
+| `derivedFrom` | view → sources | I summarize or reformat these canonical sources |
+
+Bidirectional consistency: if A `includes` B, then B should `extends` A.
+
+### Route Schema v2
+
+Routes are lean task-routing declarations that reference knowledge IDs:
+
+```json
+{
+  "schemaVersion": 2,
+  "area": "frontend",
+  "routes": [
+    {
+      "id": "frontend",
+      "priority": 100,
+      "taskTypes": ["frontend change", "UI component"],
+      "knowledge": ["frontend.architecture", "design.system"],
+      "codeAreas": ["src/frontend/**"],
+      "changeSignals": ["shared UI components", "theme"],
+      "validation": ["test"],
+      "owner": "unknown"
+    }
+  ]
+}
 ```
 
-`decisions/` is not part of the default structure because historical decisions
-can become stale. Current documentation should describe current truth. If a
-project needs architectural decision records, they must be clearly marked as
-historical and linked only when useful.
+The old `readFirst`, `canonicalDocs`, and `updateDocs` are gone. That information
+now lives in the docs themselves via `type`, `authority`, and relationships. The
+route says "this task involves these concepts." The docs declare their own role
+in the knowledge graph.
 
-The structure is adaptive. The scaffold is a starting map, not the territory.
-Add, split, rename, or consolidate folders, docs, or route shards only when
-repository evidence shows a stable responsibility, repeated pattern, boundary,
-configuration rule, shared contract, or validation need.
+### Knowledge Resolution
 
-## Folder Responsibilities
+The agent resolves knowledge IDs to files via:
 
-### `Docs/human/`
+1. `Docs/agent/knowledge-index.json` (authoritative lookup)
+2. Convention: `{scope}.{concept}` → `knowledge/{scope}/{concept}.md`
 
-Human docs are short, readable, and practical. They are for orientation and
-operation, not exhaustive implementation detail.
+### Propagation
 
-Canonical files:
+After any change, identify affected knowledge IDs and propagate:
 
-- `overview.md`: what the project is and why it exists.
-- `setup.md`: environment, configuration, dependencies, accounts, services.
-- `commands.md`: run, test, build, lint, deploy, and debug commands.
-- `architecture.md`: short system shape and links to detailed knowledge docs.
-
-Adaptive human docs may be generated when project evidence requires them:
-`environment.md`, `configuration.md`, `services.md`, `deployment.md`,
-`troubleshooting.md`, and `maintenance.md`.
-
-Human docs may summarize knowledge docs, but must not duplicate detailed truth.
-They contain day-one operational facts and link to `knowledge/operations/` for
-deeper current truth.
-
-### `Docs/agent/`
-
-Agent docs define how an LLM or coding agent should work in the repository.
-They are procedural, compact, and routing-focused.
-
-Canonical files:
-
-- `context-map.md`: maps task types to docs that must be read and updated.
-- `update-protocol.md`: defines when documentation must change.
-- `validation.md`: lists commands and checks agents should run.
-- `writing-style.md`: defines concise, low-token documentation style.
-- `naming.md`: defines file, folder, and concept naming rules.
-- `gaps.md`: records missing routes, unknown ownership, and docs debt.
-
-Agent docs should not contain project truth when that truth belongs in
-`knowledge/`. They should point to the canonical location.
-
-### `Docs/knowledge/`
-
-Knowledge docs contain the canonical explanation of current project truth. Code
-and executable checks remain the authority for verification. Knowledge docs are
-the main context source for agents and the detailed reference layer for humans.
-
-Default categories:
-
-- `architecture/`: adaptive architecture contract, system shape, boundaries,
-  dependency direction, runtime flow, structural ownership, configuration flow,
-  reuse/composition rules, and durable coding patterns.
-- `features/`: user-visible or business-visible capabilities and behavior.
-- `interfaces/`: APIs, CLI commands, events, integrations, public contracts.
-- `operations/`: configuration, testing strategy, deployment, troubleshooting.
-
-Optional categories:
-
-- `data/`: schemas, persistence models, migrations, state, pipelines.
-- `domains/`: domain concepts when the system is domain-heavy.
-
-The default should not overfit. Start with architecture, features, interfaces,
-and operations. Add more only when the project needs them.
-
-Architecture docs must not copy type, schema, or interface definitions. They
-explain where authoritative code contracts live, which modules own them, how
-consumers access them, and when changes require docs or route updates.
-
-Architecture docs should also explain reusable project primitives: components,
-hooks, helpers, adapters, config helpers, test helpers, and composition
-patterns. Agents should look for these before creating one-off implementations.
-Feature-local code stays local until repeated use or stable responsibility
-justifies promotion.
-
-### `Docs/tmp/`
-
-Tmp docs are temporary working material. They are not project truth.
-
-Use `tmp/` for:
-
-- visions
-- plans
-- notes
-- exploration
-- unresolved thoughts
-
-When tmp material becomes implemented or stable, promote the truth into
-`human/`, `agent/`, or `knowledge/`. Do not leave durable project facts only in
-`tmp/`.
-
-## Documentation Rules
-
-DocDriven follows strict documentation ownership.
-
-- Each concept has one canonical home.
-- Other files link to the canonical home instead of repeating it.
-- Short summaries are allowed when they help navigation.
-- Stale text should be replaced, not corrected by appending more text.
-- Parent files route readers to child files.
-- Leaf files contain the detailed truth.
-- Missing documentation is part of the work, not a separate cleanup task.
-- Long-term project consistency beats local convenience.
-- Agents must not hardcode favorite folders, architecture styles, config flows,
-  or coding-style preferences.
-- Reuse should be real and documented, not hypothetical or parallel.
-
-## Agent Operating Contract
-
-Agents should follow a concrete route, not interpret prose freely.
-
-`Docs/agent/context-map.md` should use a strict table format so routes are easy
-to scan, validate, and update.
-
-Required columns:
-
-| Column | Purpose |
-|---|---|
-| Task type | The kind of work being requested. |
-| Read first | The smallest required docs entry point. |
-| Canonical docs | The docs that own current explanation. |
-| Code areas | The likely source paths or ownership areas. |
-| Update docs | The docs that must be checked after changes. |
-| Validation | The command or evidence required before completion. |
-| Owner | Optional team, module, or project area owner. |
-
-Example:
-
-```markdown
-| Task type | Read first | Canonical docs | Code areas | Update docs | Validation | Owner |
-|---|---|---|---|---|---|---|
-| Feature behavior | `knowledge/features/README.md` | `knowledge/features/<feature>/` | `src/features/<feature>/` | feature docs, human overview if user-facing | `npm test` | product |
-| API change | `knowledge/interfaces/README.md` | `knowledge/interfaces/` | `src/api/` | interface docs, affected feature docs | `npm test` | platform |
-| Setup/config | `human/setup.md` | `knowledge/operations/configuration.md` | config files, env examples | setup, commands, validation | documented setup check | operations |
-```
-
-Every route should define both read targets and update targets. If a task does
-not match an existing route, the agent should update `context-map.md` or record
-the gap in `Docs/agent/gaps.md`.
-
-Architecture routes should cover structure-changing work: code organization,
-structural ownership, configuration patterns, contract locations, dependency
-direction, component reuse, shared primitives, composition patterns, and durable
-coding patterns. If those conventions are unclear, the agent should inspect
-nearby code and record a gap instead of silently creating a parallel style.
-
-## LLM Context Management
-
-DocDriven optimizes for context quality, not context volume.
-
-Agents should not read every document by default. They should:
-
-1. Classify the task.
-2. Read `Docs/agent/context-map.md`.
-3. Follow the smallest relevant route.
-4. Read the canonical knowledge docs for the task.
-5. Inspect code after loading the relevant documentation.
-6. Update docs after meaningful changes.
-7. Run validation from `Docs/agent/validation.md`.
-
-Good agent context is:
-
-- scoped
-- explicit
-- current
-- easy to search
-- low on prose filler
-- clear about constraints
-- clear about update ownership
-
-## Scaling Large Repositories
-
-Large repositories need indexes and ownership boundaries. DocDriven should scale
-by adding routing precision, not by making files longer.
-
-Scaling primitives:
-
-- generated or maintained indexes for large folders
-- per-feature or per-domain route entries in `context-map.md`
-- ownership maps from docs to code areas
-- file size caps and split rules
-- short summaries with canonical links
-- searchable names for concepts, features, and interfaces
-- explicit validation evidence for high-risk areas
-- `gaps.md` entries for missing routes or unknown ownership
-
-For large repos, each major area should have a local router:
-
-```text
-Docs/knowledge/features/<feature>/README.md
-Docs/knowledge/architecture/README.md
-Docs/knowledge/interfaces/README.md
-```
-
-These files should say what belongs below them, what does not belong there, and
-which files must be updated when that area changes.
-
-## Writing Style
-
-DocDriven documentation should be efficient for LLMs and readable for humans.
+1. Update the canonical doc (the one with `authority: canonical`)
+2. Follow `extends` → update specializations
+3. Follow `includes` → verify parent coherence
+4. Follow `derivedFrom` (reverse) → update derived views
+5. Follow `dependsOn` (reverse) → flag consumers for review
 
 Rules:
+- Canonical first. Never update a view before its source.
+- Propagation is not optional. If a dependent exists, verify or update it.
+- Flag, don't guess. If uncertain, record in `gaps.md`.
 
-- Use simple language.
-- Use short declarative sentences.
-- Prefer bullets and tables over long prose.
-- Avoid marketing language.
-- Avoid generic explanations.
-- Avoid repeating the same fact in multiple files.
-- Mark uncertainty explicitly.
-- Link to canonical docs instead of copying content.
-- Split or compress files that become too broad.
+## How This Affects Development
 
-Recommended size limits:
+### For Agents
 
-- Router files: 100-250 words.
-- Human orientation files: 300-700 words.
-- Agent protocol files: 200-500 words.
-- Knowledge leaf files: 300-1000 words.
-- Tmp plans or visions: as long as needed while temporary.
+The agent no longer has to guess which docs are related. The graph tells it.
+After changing `frontend.architecture`, the agent runs `check-impact` (or
+reasons through the graph) and gets:
 
-## Skill Package
+```
+Changed: frontend.architecture
 
-DocDriven should be distributed as an installable skill package, for example:
+Direct specializations (extends):
+  → frontend.testing
+  → frontend.state
 
-```bash
-npx skills add D3nnis72/docdriven-skills
+Derived views (derivedFrom):
+  → human.frontend.overview
+
+Consumers (dependsOn — flag for review):
+  → auth.flow
 ```
 
-The package should contain four public skills.
+This replaces the old workflow of "grep the Docs folder and see what looks
+useful" with structural certainty.
 
-### `docdriven`
+### For Humans
 
-Defines the Documentation Driven Development paradigm.
+The frontmatter makes documentation self-describing. You can look at any doc and
+immediately see:
+- What it is (`type`)
+- What it owns (`authority: canonical`)
+- What it depends on (`dependsOn`, `extends`)
+- What depends on it (by reverse-searching `derivedFrom`, `extends`, `dependsOn`)
+- When it might become stale (`updateWhen`)
 
-Responsibilities:
+### For Projects
 
-- explain the core model
-- enforce read-before-change behavior
-- enforce update-after-change behavior
-- define the human, agent, knowledge, and tmp surfaces
-- define the executable-truth and explanatory-truth split
-- define concise documentation style
+The knowledge graph grows naturally through normal agent work. Every time an
+agent creates or updates a doc, it declares the identity and relationships. Over
+time, the project accumulates a precise map of how knowledge relates — without
+anyone maintaining a separate catalog.
 
-### `docdriven-init`
+## Skills
 
-Creates the repo-local DocDriven skill.
+| Skill | Lifecycle | Purpose |
+|-------|-----------|---------|
+| `docdriven-setup` | Once | Scan project, create docs with identity + graph, generate routes |
+| `docdriven` | Every task | Read knowledge graph, work, propagate through dependencies |
+| `docdriven-audit` | Periodic | Validate frontmatter, graph coherence, propagation coverage |
 
-Responsibilities:
+## Validation Scripts
 
-- inspect the project shape
-- detect stack, framework, commands, and conventions
-- choose the docs root
-- create the repo-local skill
-- define required read order
-- define project-specific routing expectations
-- define framework-specific knowledge categories when needed
+| Script | Purpose |
+|--------|---------|
+| `check-frontmatter` | Every doc has valid identity, types, fields |
+| `check-graph` | No cycles, bidirectional consistency, valid targets |
+| `check-impact` | Given a changed ID, list all affected docs |
 
-The generated repo-local skill is agent behavior, not project truth.
+## Migration Path
 
-Example:
+This is version zero of a future knowledge fabric:
 
 ```text
-.agents/skills/project-docdriven/SKILL.md
+Today                          Later
+─────                          ─────
+Markdown frontmatter      →    Artifact database
+Explicit relationships    →    Graph database edges
+Route JSON                →    Query API
+knowledge-index.json      →    Artifact catalog
+check-impact script       →    MCP server with semantic search
+Git diff + agent          →    Automated invalidation pipeline
 ```
 
-### `docdriven-build`
+The conceptual model stays the same. The primitives are:
+- Stable identity
+- Typed knowledge
+- Explicit relationships
+- Dependency-aware propagation
+- Single canonical owner
 
-Creates the initial documentation structure.
+These hold whether stored in YAML frontmatter or a PostgreSQL database.
 
-Responsibilities:
+## Design Principles
 
-- classify project type, size, maturity, direction, and documentation risk
-- create `Docs/human/`
-- create `Docs/agent/`
-- create `Docs/knowledge/`
-- create `Docs/tmp/`
-- write initial context maps and update protocols
-- document current project architecture, features, interfaces, and operations
-- keep documentation concise and linked
-- create or recommend a local DocDriven audit entrypoint when possible
-
-`docdriven-build` should use the generated repo-local skill as its project
-contract.
-
-### `docdriven-audit`
-
-Checks documentation quality and drift.
-
-Responsibilities:
-
-- find missing docs
-- find stale docs
-- find duplicated truth
-- find oversized files
-- find orphan docs
-- find weak context routes
-- find tmp content that should be promoted or deleted
-- verify docs still match code structure and commands
-- flag missing local audit commands as reproducibility issues
-
-Audit can report findings or update docs when explicitly asked.
-
-Drift detection should be repeatable. It should not rely only on subjective
-review.
-
-The preferred audit setup is a repo-local `scripts/audit-docdriven.mjs` wrapper
-that calls the installed DocDriven audit implementation. Node projects should
-also expose a package script such as `docs:audit` when that fits the project's
-command style. The wrapper keeps audit discoverable in the project while the
-actual audit logic stays centralized and updateable.
-
-Audit should compare:
-
-- context routes to actual code areas
-- documented commands to package scripts, build files, or task runners
-- documented interfaces to schemas, route files, CLI definitions, or generated
-  contracts
-- documented config to env examples, config loaders, and deployment files
-- feature docs to source ownership maps
-- tmp plans to implemented code and promoted knowledge docs
-
-Useful audit markers:
-
-- `last-verified`: date or commit when a doc was checked
-- `evidence`: command, file path, schema, or test used for verification
-- `owned-code`: source paths explained by the doc
-- `canonical-doc`: the doc that owns a concept
-
-These markers should be lightweight. They exist to help agents trust and update
-docs in large repositories without reading everything.
-
-DocDriven must stay flexible. Every skill should reason from the current
-project instead of imposing a generic tree: what kind of system this is, how big
-it is, how fast it is changing, where it appears to be going, and what evidence
-future agents need. The larger the project or the bigger the LLM-driven change,
-the stricter the expectation that affected docs are updated before the work is
-called complete.
-
-## Repository-Local Skill
-
-Each project should get a generated local skill. This skill tells agents how
-DocDriven applies to that specific repository.
-
-It should include:
-
-- docs root
-- project type
-- stack and framework
-- test/build/lint commands
-- required read order
-- project-specific knowledge categories
-- naming conventions
-- validation expectations
-- update protocol
-- links to `Docs/agent/context-map.md`
-
-It should not copy the full project documentation. It should point agents to the
-right docs.
+- Documentation is infrastructure, not an afterthought.
+- Markdown is a lightweight knowledge graph.
+- Every concept has exactly one canonical owner.
+- Relationships are explicit, never implied.
+- Propagation is structural, not ad-hoc.
+- Views derive from canonical sources and declare it.
+- The system is agent-first but human-readable.
+- Compact, current, routed context beats comprehensive prose.
+- Current truth beats historical explanation.
+- Code and checks are evidence; knowledge explains evidence.
+- Agents follow documented project conventions, not generic preferences.
+- The graph grows through normal work, not separate maintenance.
+- Uncertainty is recorded, not hidden.
+- Audits validate graph integrity, not just content quality.
+- The system scales by adding graph precision, not longer files.
 
 ## Success Criteria
 
 DocDriven is working when:
 
-- a new human can understand the project quickly
-- an agent can find the right context without reading everything
-- code changes update docs in the same task
-- docs stay small, linked, and current
-- each fact has one canonical home
-- temporary plans do not become hidden truth
-- validation commands are discoverable
-- framework-specific structure is supported without changing the core model
+- A new human can understand the project by following derivation links
+- An agent can find the right context by resolving knowledge IDs
+- After a change, the agent knows exactly what else to update (via graph)
+- Each fact has one canonical home with explicit `authority: canonical`
+- Derived views declare their sources and can be verified mechanically
+- Temporary plans do not become hidden truth
+- The knowledge graph is structurally sound (no dangling refs, no cycles)
+- `check-impact` shows a clean propagation path for any changed concept
+- Large projects have stronger routing, clearer ownership, and narrower shards

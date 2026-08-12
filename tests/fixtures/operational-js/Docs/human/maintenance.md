@@ -1,3 +1,9 @@
+---
+id: human.operations.maintenance
+type: view
+derivedFrom:
+  - operations.general
+---
 # Maintenance
 
 Recurring operational tasks.
@@ -6,4 +12,4 @@ Recurring operational tasks.
 |---|---|---|
 | seed | `npm run seed` | package.json |
 
-Maintenance strategy, safety notes, and ownership belong in `../knowledge/operations/README.md`.
+Maintenance strategy and ownership belong in canonical knowledge → `operations.general`.

@@ -3,5 +3,6 @@
 - Use simple language.
 - Use short declarative sentences.
 - Prefer bullets and tables.
-- Link to canonical docs instead of copying content.
+- Link to canonical knowledge IDs instead of copying content.
 - Replace stale text instead of appending corrections.
+- Include frontmatter on all durable docs.

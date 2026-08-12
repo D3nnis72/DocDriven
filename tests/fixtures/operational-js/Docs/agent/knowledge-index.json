@@ -1,0 +1,17 @@
+{
+  "knowledge.index": "knowledge/README.md",
+  "architecture.general": "knowledge/architecture/README.md",
+  "features.general": "knowledge/features/README.md",
+  "interfaces.general": "knowledge/interfaces/README.md",
+  "operations.general": "knowledge/operations/README.md",
+  "human.overview": "human/overview.md",
+  "human.setup": "human/setup.md",
+  "human.commands": "human/commands.md",
+  "human.architecture": "human/architecture.md",
+  "human.operations.environment": "human/environment.md",
+  "human.operations.configuration": "human/configuration.md",
+  "human.operations.services": "human/services.md",
+  "human.operations.deployment": "human/deployment.md",
+  "human.operations.troubleshooting": "human/troubleshooting.md",
+  "human.operations.maintenance": "human/maintenance.md"
+}

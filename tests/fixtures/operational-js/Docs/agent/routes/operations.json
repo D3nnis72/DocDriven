@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "area": "operations",
   "routes": [
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -23,19 +23,16 @@
         "local setup",
         "onboarding"
       ],
-      "readFirst": [
-        "human/setup.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/commands.md"
+      "changeSignals": [
+        "install steps",
+        "prerequisites",
+        "local development"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -53,19 +50,16 @@
         "env change",
         "secret setup"
       ],
-      "readFirst": [
-        "human/environment.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/environment.md"
+      "changeSignals": [
+        "env files",
+        "secrets",
+        "environment variables"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -83,19 +77,16 @@
         "runtime setting",
         "feature flag"
       ],
-      "readFirst": [
-        "human/configuration.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/configuration.md"
+      "changeSignals": [
+        "config files",
+        "runtime settings",
+        "feature flags"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -113,19 +104,16 @@
         "external service",
         "local service"
       ],
-      "readFirst": [
-        "human/services.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/services.md"
+      "changeSignals": [
+        "service connections",
+        "external APIs",
+        "docker services"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -143,19 +131,16 @@
         "release change",
         "rollback"
       ],
-      "readFirst": [
-        "human/deployment.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/deployment.md"
+      "changeSignals": [
+        "deploy config",
+        "CI workflows",
+        "release process"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -173,19 +158,16 @@
         "setup failure",
         "runtime failure"
       ],
-      "readFirst": [
-        "human/troubleshooting.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/troubleshooting.md"
+      "changeSignals": [
+        "error handling",
+        "health checks",
+        "debugging"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -204,19 +186,16 @@
         "seed",
         "scheduled job"
       ],
-      "readFirst": [
-        "human/maintenance.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/maintenance.md"
+      "changeSignals": [
+        "migrations",
+        "cron jobs",
+        "database seeds"
       ]
     },
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
         ".env.example",
@@ -234,14 +213,10 @@
         "test command change",
         "build command change"
       ],
-      "readFirst": [
-        "agent/validation.md",
-        "human/commands.md"
-      ],
-      "updateDocs": [
-        "agent/validation.md",
-        "human/commands.md",
-        "knowledge/operations/README.md"
+      "changeSignals": [
+        "test commands",
+        "build commands",
+        "lint configuration"
       ]
     }
   ]

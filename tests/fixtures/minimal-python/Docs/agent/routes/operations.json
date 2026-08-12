@@ -1,14 +1,14 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "area": "operations",
   "routes": [
     {
       "priority": 100,
-      "canonicalDocs": [
-        "knowledge/operations/README.md"
+      "knowledge": [
+        "operations.general"
       ],
       "codeAreas": [
-        "inspect manually"
+        "*.config.*"
       ],
       "validation": [
         "test"
@@ -22,14 +22,10 @@
         "deployment",
         "validation command"
       ],
-      "readFirst": [
-        "human/setup.md"
-      ],
-      "updateDocs": [
-        "knowledge/operations/README.md",
-        "human/setup.md",
-        "human/commands.md",
-        "agent/validation.md"
+      "changeSignals": [
+        "environment variables",
+        "configuration files",
+        "deployment targets"
       ]
     }
   ]

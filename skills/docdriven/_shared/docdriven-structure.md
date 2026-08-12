@@ -1,14 +1,18 @@
 # DocDriven Structure
 
-DocDriven separates executable truth from explanatory truth.
+DocDriven separates executable truth from explanatory truth and organizes
+documentation as a lightweight knowledge graph with explicit identity and
+relationships.
+
+## Documentation Surfaces
 
 - Code, tests, configs, schemas, migrations, and build outputs are executable evidence.
-- `Docs/knowledge/` contains the canonical explanation of current project truth.
-- `Docs/human/` contains short human-facing orientation and day-one operating docs.
+- `Docs/knowledge/` contains canonical explanation of current project truth.
+- `Docs/human/` contains short human-facing orientation and derived views.
 - `Docs/agent/` contains the protocol agents use to find and update context.
 - `Docs/tmp/` contains temporary plans, visions, notes, and working material.
 
-Default scaffold:
+## Default Scaffold
 
 ```text
 Docs/
@@ -16,6 +20,7 @@ Docs/
 ├── human/
 ├── agent/
 │   ├── manifest.json
+│   ├── knowledge-index.json
 │   ├── init-scan.md
 │   ├── context-map.md
 │   ├── gaps.md
@@ -24,73 +29,100 @@ Docs/
 └── tmp/
 ```
 
-Rule: code and checks prove truth; knowledge explains truth; human docs summarize it; agent docs route to it; tmp docs are not truth until promoted.
+## Knowledge Identity
 
-The scaffold is not a closed structure. Agents should choose the final docs
-tree from project evidence, reader needs, ownership boundaries, and validation
-reality.
+Every durable documentation file has YAML frontmatter declaring its identity,
+type, and relationships. See the knowledge-schema reference for the full schema.
+
+Key rules:
+
+- Every concept has exactly one canonical owner (`authority: canonical`).
+- Derived views (`type: view`) never establish truth independently.
+- Relationships (`extends`, `includes`, `dependsOn`, `derivedFrom`) form the
+  dependency graph that drives propagation after changes.
+- IDs are stable identities that survive file renames and restructuring.
+
+## Canonical vs Views
+
+```text
+Canonical Knowledge (Docs/knowledge/)
+        ↓ derivedFrom
+Derived Views (Docs/human/, Docs/agent/)
+```
+
+Update the canonical source first, then synchronize affected views. Never
+independently establish truth in a derived view.
+
+## Route Schema v2
+
+Routes reference knowledge IDs instead of file paths:
+
+```json
+{
+  "schemaVersion": 2,
+  "area": "frontend",
+  "routes": [
+    {
+      "id": "frontend",
+      "priority": 100,
+      "taskTypes": ["frontend change", "UI component"],
+      "knowledge": ["frontend.architecture", "design.system"],
+      "codeAreas": ["src/frontend/**"],
+      "changeSignals": ["shared UI components", "theme"],
+      "validation": ["test"],
+      "owner": "unknown"
+    }
+  ]
+}
+```
+
+The agent resolves knowledge IDs to files via `knowledge-index.json` or
+convention (`{scope}.{concept}` → `knowledge/{scope}/{concept}.md`).
+
+## Core Rules
+
+- Code and checks prove truth; knowledge explains it; human docs summarize it;
+  agent docs route to it; tmp docs are not truth until promoted.
+- The scaffold is adaptive, not mandatory. Add, omit, split, or consolidate docs
+  when the project shape requires it.
+- Do not duplicate canonical content. Reference the knowledge ID instead.
+- Follow the project's documented architecture and coding style.
+- Prefer long-term project consistency over local convenience.
 
 ## Adaptive Architecture Contract
 
-The generated architecture structure is a guideline, not a cage. DocDriven must
-describe the architecture that exists in the repository and the conventions the
-project has chosen for the long term.
-
-Architecture docs should capture:
+Architecture docs describe the actual repository structure and durable
+conventions. They must capture:
 
 - current system shape and major boundaries
 - dependency direction and import boundaries
-- structural ownership for config, code contracts, schemas, generated code,
-  provider adapters, shared utilities, and package boundaries
-- reuse and composition rules for components, hooks, helpers, adapters, test
-  helpers, and shared project primitives
-- durable coding patterns that are specific to this project
-- when to add, split, rename, or consolidate folders, docs, or route shards
+- structural ownership for config, code contracts, schemas, and packages
+- reuse and composition rules for components, hooks, helpers, and adapters
+- durable coding patterns specific to this project
+- when to add, split, rename, or consolidate structure
 
-Agents must not hardcode generic preferences such as `types/`, `utils/`,
-`services/`, Clean Architecture, MVC, feature folders, or any other pattern just
-because it is familiar. They must follow documented project architecture,
-executable style config, validation commands, and nearby code.
+Agents must not hardcode generic architecture preferences. They must follow
+documented project architecture, executable style config, and validation commands.
 
-Docs should not duplicate type, schema, or interface definitions. They should
-explain where authoritative code contracts live, which module owns them, how
-consumers access them, and when changes require docs or route updates.
+## Dynamic Structure
 
-Agents should look for existing reusable project primitives before creating new
-ones. Reusable components, hooks, helpers, adapters, contracts, config helpers,
-and test helpers should have a documented home when they become durable. Keep
-feature-local code local until repeated use, stable responsibility, or a
-documented composition pattern justifies promotion.
+The generated tree is a starting scaffold. Agents choose the final shape from
+project evidence and reader needs:
 
-Add structure only when evidence justifies it:
+- Add a human doc only when a person has a distinct task or question.
+- Add a knowledge doc only when durable truth needs a canonical home.
+- Split routes only when it reduces context load or clarifies ownership.
+- Do not create docs for absent concepts.
+- Record uncertain needs in `Docs/agent/gaps.md`.
+- Large projects need stronger routing, clearer ownership, narrower shards, and
+  better validation evidence than small projects.
 
-- repeated responsibility appears in multiple places
-- ownership is unclear for config, contracts, adapters, or shared code
-- files grow beyond a single clear responsibility
-- imports cross boundaries in ways that need a rule
-- hardcoded runtime settings appear or a config flow is needed
-- a new package, domain, service, provider, or integration introduces a boundary
-- reusable components, helpers, hooks, adapters, or shared primitives start
-  accumulating without clear ownership
-- a convention is important enough to validate, lint, test, or audit
-
-When evidence is weak, record a gap instead of inventing structure.
+## Human Docs
 
 `Docs/human/` usually starts with `overview.md`, `setup.md`, `commands.md`, and
-`architecture.md`. Projects with operational evidence may have adaptive human
-docs such as `environment.md`, `configuration.md`, `services.md`,
-`deployment.md`, `troubleshooting.md`, and `maintenance.md`. These names are
-examples, not the full set of valid human docs.
+`architecture.md`. Projects with operational evidence may have adaptive docs such
+as `environment.md`, `configuration.md`, `services.md`, `deployment.md`,
+`troubleshooting.md`, and `maintenance.md`.
 
-Human docs contain actionable setup and operation facts. Deeper configuration,
-service, deployment, and maintenance truth belongs in `Docs/knowledge/operations/`,
-with human docs linking there instead of copying implementation detail.
-
-Add docs only when they have a clear job:
-
-- a human doc answers a distinct human question
-- a knowledge doc owns durable current truth
-- a route shard lowers agent context load or clarifies ownership
-- a tmp doc captures temporary work that is not yet truth
-
-If the evidence is weak, record a gap instead of inventing a file.
+Human docs contain actionable orientation. Deeper truth belongs in
+`Docs/knowledge/`, with human docs linking there via knowledge IDs.

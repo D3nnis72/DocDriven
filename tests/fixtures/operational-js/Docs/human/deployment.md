@@ -1,3 +1,9 @@
+---
+id: human.operations.deployment
+type: view
+derivedFrom:
+  - operations.general
+---
 # Deployment
 
 Deploy targets, release commands, and rollback pointers.
@@ -8,4 +14,4 @@ Deploy targets, release commands, and rollback pointers.
 | GitHub Actions | .github/workflows | `npm run deploy` |
 | scripted deploy | package.json | `npm run deploy` |
 
-Run validation before deployment. Rollback and environment-specific behavior belong in `../knowledge/operations/README.md`.
+Detailed deployment truth belongs in canonical knowledge → `operations.general`.

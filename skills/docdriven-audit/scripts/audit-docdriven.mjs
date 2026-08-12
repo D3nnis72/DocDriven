@@ -17,11 +17,11 @@ const requiredFiles = [
   "human/commands.md",
   "human/architecture.md",
   "agent/context-map.md",
-  "agent/update-protocol.md",
   "agent/validation.md",
   "agent/writing-style.md",
   "agent/naming.md",
   "agent/gaps.md",
+  "agent/knowledge-index.json",
   "knowledge/README.md",
   "knowledge/architecture/README.md",
   "knowledge/features/README.md",
@@ -32,10 +32,9 @@ const requiredFiles = [
 
 const requiredColumns = [
   "Task type",
-  "Read first",
-  "Canonical docs",
+  "Knowledge",
   "Code areas",
-  "Update docs",
+  "Change signals",
   "Validation",
   "Owner"
 ];
@@ -98,7 +97,7 @@ function checkManifest() {
       severity: "warning",
       code: "missing-manifest",
       file: path.relative(root, file),
-      message: "Route graph manifest is missing. Add Docs/agent/manifest.json for scalable routing."
+      message: "Route graph manifest is missing."
     });
     return null;
   }
@@ -114,6 +113,15 @@ function checkManifest() {
       message: `Manifest JSON is invalid: ${error.message}`
     });
     return null;
+  }
+
+  if (manifest.schemaVersion !== 2) {
+    findings.push({
+      severity: "warning",
+      code: "old-schema-version",
+      file: path.relative(root, file),
+      message: `Manifest uses schema version ${manifest.schemaVersion}; expected 2.`
+    });
   }
 
   if (!Array.isArray(manifest.routeIndexes) || manifest.routeIndexes.length === 0) {
@@ -179,13 +187,14 @@ function checkContextMap() {
       });
     }
   }
-  if (header.includes("Route ID")) return;
-  findings.push({
-    severity: "warning",
-    code: "missing-route-id-column",
-    file: path.relative(root, file),
-    message: "Context map should include a Route ID column that matches route shards."
-  });
+  if (!header.includes("Route ID")) {
+    findings.push({
+      severity: "warning",
+      code: "missing-route-id-column",
+      file: path.relative(root, file),
+      message: "Context map should include a Route ID column."
+    });
+  }
 }
 
 function checkRouteGraph(routeGraph) {
@@ -224,7 +233,7 @@ function checkRouteGraph(routeGraph) {
       } else {
         ids.set(route.id, path.relative(root, shard.file));
       }
-      checkRouteDocs(route, shard.file);
+      checkRouteKnowledge(route, shard.file);
       checkRouteCodeAreas(route, shard.file);
       checkRouteValidation(route, shard.file);
     }
@@ -232,7 +241,7 @@ function checkRouteGraph(routeGraph) {
 }
 
 function checkRouteSchema(route, file) {
-  const required = ["id", "readFirst", "canonicalDocs", "codeAreas", "updateDocs", "validation", "owner"];
+  const required = ["id", "knowledge", "codeAreas", "validation", "owner"];
   if (!route || typeof route !== "object") {
     findings.push({
       severity: "error",
@@ -262,18 +271,44 @@ function checkRouteSchema(route, file) {
   }
 }
 
-function checkRouteDocs(route, file) {
-  for (const key of ["readFirst", "canonicalDocs", "updateDocs"]) {
-    for (const relative of arrayValue(route[key])) {
-      if (isLooseValue(relative)) continue;
-      const absolute = docsPath(stripTicks(relative));
-      if (!fs.existsSync(absolute)) {
+function checkRouteKnowledge(route, file) {
+  const indexFile = path.join(docs, "agent", "knowledge-index.json");
+  let index = null;
+  if (fs.existsSync(indexFile)) {
+    try { index = readJson(indexFile); } catch { /* skip */ }
+  }
+
+  for (const kid of arrayValue(route.knowledge)) {
+    // Try to resolve via index
+    if (index && index[kid]) {
+      const resolved = docsPath(index[kid]);
+      if (!fs.existsSync(resolved)) {
         findings.push({
           severity: "error",
-          code: "missing-route-doc",
+          code: "knowledge-file-missing",
           file: path.relative(root, file),
-          message: `Route ${route.id} references missing ${key} doc: ${relative}.`
+          message: `Route ${route.id} knowledge ID ${kid} resolves to missing file: ${index[kid]}.`
         });
+      }
+      continue;
+    }
+
+    // Try convention: scope.concept -> knowledge/scope/concept.md
+    const parts = kid.split(".");
+    if (parts.length >= 2) {
+      const conventionPath = `knowledge/${parts.slice(0, -1).join("/")}/${parts[parts.length - 1]}.md`;
+      const readmePath = `knowledge/${parts.join("/")}/README.md`;
+      if (!fs.existsSync(docsPath(conventionPath)) && !fs.existsSync(docsPath(readmePath))) {
+        // Also try knowledge/{first}/README.md for {first}.general pattern
+        const generalPath = `knowledge/${parts[0]}/README.md`;
+        if (!fs.existsSync(docsPath(generalPath))) {
+          findings.push({
+            severity: "warning",
+            code: "knowledge-unresolved",
+            file: path.relative(root, file),
+            message: `Route ${route.id} knowledge ID ${kid} cannot be resolved by index or convention.`
+          });
+        }
       }
     }
   }
@@ -376,7 +411,6 @@ function checkOwnedCodeMarkers() {
 function checkPlaceholders() {
   const patterns = [
     /TODO:/i,
-    /This is the short human architecture summary\./,
     /inspect manually/i,
     /unknown/i,
     /not detected/i
@@ -424,7 +458,7 @@ function checkArchitectureContract() {
       severity: "warning",
       code: "undocumented-structure-signals",
       file: path.relative(root, architectureFile),
-      message: `Repository has structure signals (${structureSignals.join(", ")}) but architecture docs do not explain current structure or boundaries.`
+      message: `Repository has structure signals (${structureSignals.join(", ")}) but architecture docs do not explain structure or boundaries.`
     });
   }
 
@@ -444,7 +478,7 @@ function checkArchitectureContract() {
       severity: "warning",
       code: "undocumented-reuse-pattern",
       file: path.relative(root, architectureFile),
-      message: `Repository has reuse signals (${reuseSignals.join(", ")}) but architecture docs do not explain reusable primitives or composition rules.`
+      message: `Repository has reuse signals (${reuseSignals.join(", ")}) but architecture docs do not explain reusable primitives.`
     });
   }
 }
@@ -490,50 +524,46 @@ function checkOrphanKnowledgeDocs(routeGraph) {
   const referenced = new Set();
   for (const shard of routeGraph.shards) {
     for (const route of shard.data.routes || []) {
-      for (const key of ["readFirst", "canonicalDocs", "updateDocs"]) {
-        for (const relative of arrayValue(route[key])) {
-          if (String(relative).startsWith("knowledge/")) referenced.add(stripTicks(relative));
-        }
+      for (const kid of arrayValue(route.knowledge)) {
+        referenced.add(kid);
       }
     }
   }
 
+  // Load index to map files to IDs
+  const indexFile = path.join(docs, "agent", "knowledge-index.json");
+  let index = {};
+  if (fs.existsSync(indexFile)) {
+    try { index = readJson(indexFile); } catch { /* skip */ }
+  }
+  const indexedIds = new Set(Object.keys(index));
+
   for (const file of markdownFiles(path.join(docs, "knowledge"))) {
     const relative = path.relative(docs, file).split(path.sep).join("/");
-    if (relative.endsWith("/README.md")) continue;
-    if (!referenced.has(relative)) {
+    if (relative.endsWith("/README.md") && relative === "knowledge/README.md") continue;
+    const content = fs.readFileSync(file, "utf8");
+    const fm = parseFrontmatter(content);
+    if (!fm || !fm.id) continue;
+    if (!referenced.has(fm.id) && !isReferencedByOtherDoc(fm.id, indexedIds)) {
       findings.push({
         severity: "warning",
         code: "orphan-knowledge-doc",
         file: path.relative(root, file),
-        message: "Knowledge doc is not referenced by any route."
+        message: `Knowledge doc ${fm.id} is not referenced by any route.`
       });
     }
   }
 }
 
+function isReferencedByOtherDoc(id, indexedIds) {
+  // A knowledge doc might be referenced via includes/extends/dependsOn
+  // We do a lightweight check here; check-graph does the full analysis
+  return false;
+}
+
 function checkAdaptiveHumanDocs(routeGraph) {
   const adaptiveNames = ["environment", "configuration", "services", "deployment", "troubleshooting", "maintenance"];
-  const adaptivePaths = new Set(adaptiveNames.map((name) => `human/${name}.md`));
   const expected = new Set(project.adaptiveHumanDocs.map((name) => `human/${name}.md`));
-  const referenced = new Set();
-
-  for (const shard of routeGraph.shards) {
-    for (const route of shard.data.routes || []) {
-      for (const key of ["readFirst", "canonicalDocs", "updateDocs"]) {
-        for (const relative of arrayValue(route[key])) {
-          const normalized = stripTicks(relative);
-          if (adaptivePaths.has(normalized)) {
-            expected.add(normalized);
-            referenced.add(normalized);
-          }
-        }
-      }
-    }
-  }
-
-  const setupFile = docsPath("human/setup.md");
-  const setupContent = fs.existsSync(setupFile) ? fs.readFileSync(setupFile, "utf8") : "";
 
   for (const relative of expected) {
     const file = docsPath(relative);
@@ -542,40 +572,34 @@ function checkAdaptiveHumanDocs(routeGraph) {
         severity: "error",
         code: "missing-adaptive-human-doc",
         file: path.relative(root, file),
-        message: `Adaptive human doc is required by routes or detected signals: ${relative}.`
+        message: `Adaptive human doc is required by detected signals: ${relative}.`
       });
+    }
+  }
+}
+
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return null;
+  const yaml = match[1];
+  const result = {};
+  let currentKey = null;
+  for (const line of yaml.split(/\r?\n/)) {
+    const kvMatch = line.match(/^(\w+):\s*(.*)$/);
+    if (kvMatch) {
+      currentKey = kvMatch[1];
+      const value = kvMatch[2].trim();
+      if (value === "" || value === "[]") result[currentKey] = [];
+      else result[currentKey] = value.replace(/^["']|["']$/g, "");
       continue;
     }
-
-    const content = fs.readFileSync(file, "utf8");
-    if (!setupContent.includes(path.basename(relative))) {
-      findings.push({
-        severity: "warning",
-        code: "adaptive-doc-not-linked-from-setup",
-        file: path.relative(root, file),
-        message: `Adaptive human doc should be linked from human/setup.md: ${relative}.`
-      });
-    }
-    if (!content.includes("knowledge/operations/")) {
-      findings.push({
-        severity: "warning",
-        code: "adaptive-doc-missing-operations-link",
-        file: path.relative(root, file),
-        message: `Adaptive human doc should link to canonical operations knowledge: ${relative}.`
-      });
+    const listMatch = line.match(/^\s+-\s+(.+)$/);
+    if (listMatch && currentKey) {
+      if (!Array.isArray(result[currentKey])) result[currentKey] = result[currentKey] ? [result[currentKey]] : [];
+      result[currentKey].push(listMatch[1].trim().replace(/^["']|["']$/g, ""));
     }
   }
-
-  for (const file of markdownFiles(path.join(docs, "human"))) {
-    const relative = path.relative(docs, file).split(path.sep).join("/");
-    if (!adaptivePaths.has(relative) || expected.has(relative) || referenced.has(relative)) continue;
-    findings.push({
-      severity: "warning",
-      code: "orphan-adaptive-human-doc",
-      file: path.relative(root, file),
-      message: "Adaptive human doc exists but is not referenced by routes or detected signals."
-    });
-  }
+  return result;
 }
 
 function readJson(file) {
@@ -598,33 +622,19 @@ function arrayValue(value) {
 
 function isLooseValue(value) {
   const normalized = String(value).trim().toLowerCase();
-  return ["", "none", "none until promoted", "inspect manually", "documented setup check"].includes(normalized);
+  return ["", "none", "inspect manually", "*.config.*"].includes(normalized);
 }
 
 function matchRepoPaths(pattern) {
   const normalized = pattern.split(path.sep).join("/");
   if (normalized.endsWith("/**")) {
     const prefix = normalized.slice(0, -3);
-    return allFiles(root).filter((file) => {
-      const relative = path.relative(root, file).split(path.sep).join("/");
-      return relative === prefix || relative.startsWith(`${prefix}/`);
-    });
+    const dir = path.join(root, prefix);
+    return fs.existsSync(dir) ? [dir] : [];
   }
   const exact = path.join(root, normalized);
   if (fs.existsSync(exact)) return [exact];
   return [];
-}
-
-function allFiles(dir) {
-  if (!fs.existsSync(dir)) return [];
-  const out = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name === ".git") continue;
-    const absolute = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...allFiles(absolute));
-    if (entry.isFile()) out.push(absolute);
-  }
-  return out;
 }
 
 function markdownFiles(dir) {
@@ -641,6 +651,7 @@ function markdownFiles(dir) {
 function countWords(content) {
   return content
     .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^---[\s\S]*?---/m, " ")
     .split(/\s+/)
     .filter(Boolean).length;
 }

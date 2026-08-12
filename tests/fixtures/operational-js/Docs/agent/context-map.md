@@ -2,16 +2,16 @@
 
 Use this table to choose the smallest useful context route.
 
-| Route ID | Task type | Read first | Canonical docs | Code areas | Update docs | Validation | Owner |
-|---|---|---|---|---|---|---|---|
-| architecture-general | Architecture change, code organization, structural ownership, configuration pattern, contract location, coding pattern, component reuse, shared primitive, composition pattern | `knowledge/architecture/README.md` | `knowledge/architecture/README.md` | src/** | architecture docs, human architecture if user-facing | test | unknown |
-| feature-general | Feature behavior | `knowledge/features/README.md` | `knowledge/features/README.md` | src/** | affected feature docs, human overview if needed | test | unknown |
-| interface-general | Interface change | `knowledge/interfaces/README.md` | `knowledge/interfaces/README.md` | src/** | interface docs and affected feature docs | test | unknown |
-| operations-setup | setup, local setup, onboarding | `human/setup.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/commands.md | test | unknown |
-| operations-environment | environment variable change, env change, secret setup | `human/environment.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/environment.md | test | unknown |
-| operations-configuration | config file change, runtime setting, feature flag | `human/configuration.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/configuration.md | test | unknown |
-| operations-services | service dependency change, external service, local service | `human/services.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/services.md | test | unknown |
-| operations-deployment | deployment change, release change, rollback | `human/deployment.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/deployment.md | test | unknown |
-| operations-troubleshooting | troubleshooting, setup failure, runtime failure | `human/troubleshooting.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/troubleshooting.md | test | unknown |
-| operations-maintenance | maintenance task change, migration, seed, scheduled job | `human/maintenance.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | knowledge/operations/README.md, human/setup.md, human/maintenance.md | test | unknown |
-| operations-validation | validation command change, test command change, build command change | `agent/validation.md`, `human/commands.md` | `knowledge/operations/README.md` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | agent/validation.md, human/commands.md, knowledge/operations/README.md | test | unknown |
+| Route ID | Task type | Knowledge | Code areas | Change signals | Validation | Owner |
+|---|---|---|---|---|---|---|
+| architecture-general | Architecture, code organization, structural ownership | `architecture.general` | src/** | structural ownership, dependency direction | test | unknown |
+| feature-general | Feature behavior | `features.general` | src/** | user-facing behavior, feature logic | test | unknown |
+| interface-general | Interface, API, CLI change | `interfaces.general` | src/** | public API, integration contracts | test | unknown |
+| operations-setup | setup, local setup, onboarding | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | install steps, prerequisites, local development | test | unknown |
+| operations-environment | environment variable change, env change, secret setup | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | env files, secrets, environment variables | test | unknown |
+| operations-configuration | config file change, runtime setting, feature flag | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | config files, runtime settings, feature flags | test | unknown |
+| operations-services | service dependency change, external service, local service | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | service connections, external APIs, docker services | test | unknown |
+| operations-deployment | deployment change, release change, rollback | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | deploy config, CI workflows, release process | test | unknown |
+| operations-troubleshooting | troubleshooting, setup failure, runtime failure | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | error handling, health checks, debugging | test | unknown |
+| operations-maintenance | maintenance task change, migration, seed, scheduled job | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | migrations, cron jobs, database seeds | test | unknown |
+| operations-validation | validation command change, test command change, build command change | `operations.general` | .env.example, Dockerfile, docker-compose.yml, .github/workflows | test commands, build commands, lint configuration | test | unknown |

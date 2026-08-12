@@ -15,22 +15,20 @@ const vendorMap = {
   docdriven: [
     "agent-operating-contract.md",
     "docdriven-structure.md",
+    "knowledge-schema.md",
     "writing-style.md"
   ],
-  "docdriven-init": [
+  "docdriven-setup": [
     "agent-operating-contract.md",
-    "operational-scan.mjs",
-    "repo-local-skill-template.md"
-  ],
-  "docdriven-build": [
-    "agent-operating-contract.md",
-    "docs-tree-template.md",
+    "docdriven-structure.md",
+    "knowledge-schema.md",
     "operational-scan.mjs",
     "writing-style.md"
   ],
   "docdriven-audit": [
     "agent-operating-contract.md",
     "audit-checklist.md",
+    "knowledge-schema.md",
     "operational-scan.mjs"
   ]
 };

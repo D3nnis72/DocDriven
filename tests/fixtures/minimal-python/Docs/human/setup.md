@@ -1,3 +1,9 @@
+---
+id: human.setup
+type: view
+derivedFrom:
+  - operations.general
+---
 # Setup
 
 Stack: Python
@@ -18,4 +24,4 @@ Package manager: python
 
 - none detected
 
-Detailed operations truth belongs in `../knowledge/operations/README.md`.
+Detailed operations truth belongs in canonical knowledge → `operations.general`.

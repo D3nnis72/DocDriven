@@ -1,3 +1,9 @@
+---
+id: human.operations.configuration
+type: view
+derivedFrom:
+  - operations.general
+---
 # Configuration
 
 Project configuration files and runtime settings.
@@ -8,4 +14,4 @@ Project configuration files and runtime settings.
 | `docker-compose.yml` | Container configuration |
 | `.github/workflows` | CI workflow |
 
-Configuration precedence and implementation details belong in `../knowledge/operations/README.md`.
+Configuration precedence and details belong in canonical knowledge → `operations.general`.

@@ -1,3 +1,9 @@
+---
+id: human.operations.services
+type: view
+derivedFrom:
+  - operations.general
+---
 # Services
 
 Required external services, local emulators, and service checks.
@@ -10,4 +16,4 @@ Required external services, local emulators, and service checks.
 | stripe | package.json | Confirm required account, emulator, or local service. | Confirm the service connection before development. |
 | database | prisma/ | Confirm database URL and migration workflow. | Run the configured database check or migration command. |
 
-Service contracts and deeper operational details belong in `../knowledge/operations/README.md`.
+Service contracts and details belong in canonical knowledge → `operations.general`.

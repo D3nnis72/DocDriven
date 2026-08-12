@@ -32,8 +32,7 @@ for (const skill of skills) {
   checkReferences(skill);
 }
 
-runScript("docdriven-build", "create-docs-tree.mjs", ["--root", projectDir], [0]);
-runScript("docdriven-init", "create-project-skill.mjs", ["--root", projectDir], [0]);
+runScript("docdriven-setup", "setup-docdriven.mjs", ["--root", projectDir], [0]);
 runScript("docdriven-audit", "audit-docdriven.mjs", ["--root", projectDir, "--format", "json"], [0, 1]);
 
 fs.rmSync(workDir, { recursive: true, force: true });

@@ -1,3 +1,9 @@
+---
+id: human.commands
+type: view
+derivedFrom:
+  - operations.general
+---
 # Commands
 
 | Purpose | Command |
