@@ -8,6 +8,9 @@
 - Link to canonical docs instead of copying content.
 - Mark uncertainty explicitly.
 - Replace stale text instead of appending corrections.
+- **Reference by ID, never duplicate.** When another knowledge ID owns a concept,
+  reference it by ID. A single orienting sentence is acceptable. Anything more
+  belongs in the canonical owner.
 
 Size targets:
 

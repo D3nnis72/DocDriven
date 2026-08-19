@@ -8,8 +8,9 @@ const docsRoot = valueAfter("--docs-root") || "Docs";
 const format = valueAfter("--format") || "text";
 const docs = path.join(root, docsRoot);
 
-const validTypes = ["architecture", "rule", "decision", "summary", "procedure", "view"];
+const validTypes = ["architecture", "rule", "decision", "summary", "procedure", "overview", "view"];
 const idPattern = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$/;
+const shortHashPattern = /^[0-9a-f]{7,}$/;
 const findings = [];
 const seenIds = new Map();
 
@@ -60,6 +61,25 @@ function checkKnowledgeDocs() {
 
     if (frontmatter.derivedFrom) {
       findings.push({ severity: "warning", code: "canonical-has-derivedFrom", file: relative, message: "Canonical knowledge doc should not have derivedFrom. Use dependsOn instead." });
+    }
+
+    // sourceVersion validation
+    if (frontmatter.sourceVersion && !shortHashPattern.test(frontmatter.sourceVersion)) {
+      findings.push({ severity: "warning", code: "invalid-sourceVersion", file: relative, message: `sourceVersion "${frontmatter.sourceVersion}" does not look like a short commit hash.` });
+    }
+
+    if (!frontmatter.sourceVersion) {
+      findings.push({ severity: "info", code: "missing-sourceVersion", file: relative, message: "Knowledge doc has no sourceVersion. Consider adding one for staleness detection." });
+    }
+
+    // groundedIn validation — only leaf docs should have it, overview docs should not
+    if (frontmatter.groundedIn && frontmatter.type === "overview") {
+      findings.push({ severity: "warning", code: "overview-has-groundedIn", file: relative, message: "Overview docs should not have groundedIn. They are grounded in their children." });
+    }
+
+    // overview docs must have includes
+    if (frontmatter.type === "overview" && (!frontmatter.includes || frontmatter.includes.length === 0)) {
+      findings.push({ severity: "warning", code: "overview-missing-includes", file: relative, message: "Overview docs should have an includes list referencing child knowledge IDs." });
     }
   }
 }

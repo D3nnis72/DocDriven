@@ -41,6 +41,53 @@ Key rules:
 - Relationships (`extends`, `includes`, `dependsOn`, `derivedFrom`) form the
   dependency graph that drives propagation after changes.
 - IDs are stable identities that survive file renames and restructuring.
+- When another knowledge ID owns a concept, reference it by ID. Do not restate
+  its content. A single orienting sentence is acceptable.
+
+## Overview Docs
+
+Overview docs (`type: overview`) are the entry point to a knowledge area. They
+provide brief orientation and reference children by ID:
+
+```yaml
+---
+id: payments
+type: overview
+scope: payments
+authority: canonical
+sourceVersion: e7f21a3
+includes:
+  - payments.flow
+  - payments.providers
+  - payments.errors
+---
+# Payments
+
+Brief domain orientation.
+
+## Checkout Flow
+
+See → `payments.flow`
+
+## Providers
+
+See → `payments.providers`
+```
+
+Rules:
+- One sentence of context per child (max).
+- Detail lives in the child doc — never restate it.
+- If the summary exceeds one sentence, the content belongs in the child.
+
+## Grounding and Versioning
+
+Every knowledge doc carries `sourceVersion` — a short commit hash recording
+what code or doc state this reflects. The agent updates it automatically during
+propagation.
+
+Leaf docs that explain specific code carry `groundedIn` listing the source files.
+The audit skill compares `sourceVersion` against Git history to detect stale docs
+mechanically.
 
 ## Canonical vs Views
 

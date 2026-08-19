@@ -34,6 +34,7 @@ Use this skill to check documentation drift and knowledge graph integrity.
 | `check-frontmatter` | Every doc has valid identity, types, required fields | After creating/editing docs |
 | `check-graph` | Relationships are coherent, no dangling refs, bidirectional consistency | After changing relationships |
 | `check-impact` | Given a changed ID, shows what else needs review | After any code or doc change |
+| `check-staleness` | Compare sourceVersion against Git to find stale docs | Periodic or before propagation |
 
 Usage:
 
@@ -41,6 +42,7 @@ Usage:
 node scripts/check-frontmatter.mjs --root .
 node scripts/check-graph.mjs --root .
 node scripts/check-impact.mjs --changed frontend.architecture
+node scripts/check-staleness.mjs --root .
 ```
 
 ## Change-Scoped Audit

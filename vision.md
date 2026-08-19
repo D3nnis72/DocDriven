@@ -194,6 +194,7 @@ anyone maintaining a separate catalog.
 | `check-frontmatter` | Every doc has valid identity, types, fields |
 | `check-graph` | No cycles, bidirectional consistency, valid targets |
 | `check-impact` | Given a changed ID, list all affected docs |
+| `check-staleness` | Compare `sourceVersion` against Git history to flag stale docs |
 
 ## Migration Path
 
