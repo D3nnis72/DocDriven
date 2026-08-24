@@ -78,8 +78,12 @@ The agent resolves knowledge IDs to file paths using:
 1. `Docs/agent/knowledge-index.json` (authoritative lookup)
 2. Convention: `{scope}.{concept}` → `knowledge/{scope}/{concept}.md`
 
-After resolution, the agent reads canonical docs (`authority: canonical`) first,
-then follows relationships (`extends`, `includes`) for depth.
+After resolution:
+
+- If a resolved ID is a `type: overview` doc, use it as a **navigation hub**: read the overview, compare the task against child descriptions, and load only relevant children. Do not load all children by default.
+- Read canonical docs (`authority: canonical`) first.
+- Follow `extends` and `includes` for additional context as needed.
+- Follow `dependsOn` to load dependencies as supporting context (one level only — do not follow transitive dependencies automatically).
 
 ## Context Map
 
@@ -94,14 +98,16 @@ then follows relationships (`extends`, `includes`) for depth.
 2. Read `Docs/agent/manifest.json`.
 3. Load the smallest relevant route shard.
 4. Resolve the route's `knowledge` IDs to files.
-5. Read canonical knowledge docs first.
-6. Follow relationships for additional context as needed.
-7. Change code and docs together.
-8. Identify affected knowledge IDs from the change.
-9. Propagate: update canonical → specializations → views → flag dependents.
-10. Update route shards when ownership, validation, or structure changes.
-11. Record unknowns in `Docs/agent/gaps.md`.
-12. Run route validation.
+5. If a resolved ID is an overview doc, read it and select only task-relevant children.
+6. Read canonical knowledge docs first.
+7. Follow `dependsOn` one level for supporting context.
+8. Follow `extends` and `includes` for additional context as needed.
+9. Change code and docs together.
+10. Identify affected knowledge IDs from the change.
+11. Propagate: update canonical → specializations → views → flag dependents (see stop condition below).
+12. Update route shards when ownership, validation, or structure changes.
+13. Record unknowns in `Docs/agent/gaps.md`.
+14. Run route validation.
 
 ## Propagation Rules
 
@@ -112,6 +118,12 @@ After a change, determine affected knowledge IDs and propagate:
 3. Follow `includes` → verify parent coherence.
 4. Follow `derivedFrom` (reverse) → update derived views.
 5. Follow `dependsOn` (reverse) → flag for review.
+
+**Stop condition:** If verifying a parent/dependent confirms it is still accurate
+(includes list correct, summary unchanged), update only its `sourceVersion` and
+stop propagating further upward. Only continue upward propagation if the
+parent's content actually changed. Verification that confirms "still accurate"
+is a terminal event.
 
 Never update a view before its canonical source. If uncertain whether a
 dependent needs updating, record in `Docs/agent/gaps.md`.

@@ -46,8 +46,12 @@ Key rules:
 
 ## Overview Docs
 
-Overview docs (`type: overview`) are the entry point to a knowledge area. They
-provide brief orientation and reference children by ID:
+Overview docs (`type: overview`) serve a dual purpose:
+- **For humans:** orientation on what exists in a knowledge area.
+- **For agents:** navigation hub to decide which children to load for a task.
+
+The agent reads an overview first and selects only relevant children based on the
+current task. It does not load all children by default.
 
 ```yaml
 ---
@@ -75,7 +79,8 @@ See → `payments.providers`
 ```
 
 Rules:
-- One sentence of context per child (max).
+- One sentence of context per child (max). Write it to help the agent decide
+  relevance — not just describe the child, but indicate what tasks would need it.
 - Detail lives in the child doc — never restate it.
 - If the summary exceeds one sentence, the content belongs in the child.
 
@@ -157,12 +162,55 @@ The generated tree is a starting scaffold. Agents choose the final shape from
 project evidence and reader needs:
 
 - Add a human doc only when a person has a distinct task or question.
-- Add a knowledge doc only when durable truth needs a canonical home.
+- Add a knowledge doc only when durable truth needs a canonical home and that
+  truth is not already expressed in code.
+- Never create a knowledge doc for something fully expressed in grounding sources
+  (types, schemas, API specs, config). Knowledge exists only for what code can't
+  tell you: decisions, constraints, boundaries, strategies, ownership rules.
 - Split routes only when it reduces context load or clarifies ownership.
 - Do not create docs for absent concepts.
 - Record uncertain needs in `Docs/agent/gaps.md`.
 - Large projects need stronger routing, clearer ownership, narrower shards, and
   better validation evidence than small projects.
+
+## Hierarchy Growth
+
+When a knowledge folder accumulates 6+ leaf docs at the same level, group
+related docs into a subfolder and create an overview doc for that subfolder.
+This creates the navigable hierarchy that enables progressive routing.
+
+**When to promote:** During propagation or when creating a new knowledge doc, if
+the target folder has 6+ siblings, consider whether a group shares a concern
+that deserves its own subfolder + overview.
+
+**Common knowledge categories** (use as inspiration, not a fixed taxonomy):
+
+| Category | What belongs here | Nesting examples |
+|---|---|---|
+| `architecture/` | System shape, boundaries, dependency rules, structural decisions | `architecture/testing/`, `architecture/security/`, `architecture/data/` |
+| `features/` | Business capabilities, user-facing behavior | `features/auth/`, `features/messaging/` |
+| `integrations/` | Third-party services, external systems, providers | `integrations/payments/`, `integrations/auth/` |
+| `operations/` | Deployment, CI/CD, environments, monitoring | `operations/ci/`, `operations/monitoring/` |
+| `design-system/` | Tokens, visual components, patterns, accessibility | `design-system/tokens/`, `design-system/components/` |
+| `security/` | Auth flows, permissions, data handling, compliance | Could nest under `architecture/security/` if small |
+| `testing/` | Test strategy, coverage, fixtures, test infra | Top-level if complex; `architecture/testing/` if just strategy |
+| `conventions/` | Coding patterns, naming, file structure, error handling | Often stays top-level as cross-cutting reference |
+| `workflows/` | Multi-step processes, state machines, orchestration | Distinct from features: flows that span multiple features |
+| `configuration/` | Feature flags, env vars, runtime config, tenant settings | Could nest under `operations/config/` if small |
+
+**Deciding question:** Where would the agent look first for this concept?
+
+**Category disambiguation:**
+- Rule constrains **where code lives or how modules depend on each other** → `architecture/`
+- Rule constrains **how code is written within a module** → `conventions/`
+- Features = what the system does (capabilities). Workflows = how a process flows
+  across multiple features (orchestration).
+
+**Rules:**
+- Only create a category if 2+ docs belong there. One doc = keep in parent.
+- Categories can live at any level — top-level or nested.
+- The default setup (`architecture/`, `features/`, `operations/`) covers ~80% of
+  projects. Add from the catalog when the project demands it.
 
 ## Human Docs
 

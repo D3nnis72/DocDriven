@@ -8,7 +8,7 @@ identity, type, authority, and relationships.
 | Field | Required | Values | Purpose |
 |---|---|---|---|
 | `id` | yes | `dot.separated.name` | Stable identity that survives renames |
-| `type` | yes | `architecture`, `rule`, `decision`, `summary`, `procedure`, `overview`, `view` | What kind of knowledge this is |
+| `type` | yes | `architecture`, `rule`, `decision`, `summary`, `procedure`, `overview`, `view` | What kind of knowledge this is. `overview` docs serve as navigation hubs for both humans and agents. |
 | `scope` | no | free text | Domain this belongs to |
 | `authority` | canonical docs only | `canonical` | Marks this as the single owner of a concept |
 | `sourceVersion` | recommended | short commit hash (7 chars) | The code/doc state this was last verified against |
@@ -33,7 +33,7 @@ IDs must be unique across the entire docs tree.
 |---|---|---|---|
 | `extends` | child → parent | I am a specialization of this base | `frontend.testing` extends `frontend.architecture` |
 | `includes` | parent → children | My full picture involves these sub-concepts | `frontend.architecture` includes `frontend.testing` |
-| `dependsOn` | consumer → dependency | I assume this other knowledge is true | `frontend.architecture` depends on `design.system` |
+| `dependsOn` | consumer → dependency | I assume this other knowledge is true. During routing, the agent loads dependencies as supporting context (one level only). | `frontend.architecture` depends on `design.system` |
 | `derivedFrom` | view → sources | I summarize or reformat these sources | `human.frontend` derived from `frontend.architecture` |
 
 Bidirectional consistency: if A `includes` B, then B should `extends` A.
@@ -202,9 +202,12 @@ See → `payments.errors`
 See → `payments.testing`
 ```
 
-Overview docs provide brief orientation and reference children by ID. Rules:
+Overview docs provide brief orientation and reference children by ID. They serve
+as navigation hubs — agents read them first and select only task-relevant
+children rather than loading everything. Rules:
 
-- One sentence of context per child (max).
+- One sentence of context per child (max). Write it to help the agent decide
+  relevance — indicate what tasks or concerns would need this child.
 - Detail lives in the child doc.
 - If the summary exceeds one sentence, the content belongs in the child.
 - Never restate what a child doc says — reference the ID instead.
@@ -282,3 +285,7 @@ After changing a knowledge doc:
 3. Follow `includes` → verify parent coherence
 4. Follow `derivedFrom` (reverse) → update views
 5. Follow `dependsOn` (reverse) → flag for review
+
+**Stop condition:** If verifying a parent confirms it is still accurate (includes
+list correct, summary unchanged), update only its `sourceVersion` and stop
+propagating further upward. Only continue if the parent's content changed.

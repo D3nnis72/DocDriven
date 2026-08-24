@@ -14,11 +14,13 @@ DocDriven is Documentation Driven Development for agents and humans.
 3. Read `Docs/agent/manifest.json` when present.
 4. Load only the smallest relevant route shard.
 5. Resolve the route's `knowledge` IDs to files via `knowledge-index.json` or convention.
-6. Read canonical docs (`authority: canonical`) first.
-7. Follow `extends` and `includes` for additional context as needed.
-8. Do the work — change code and docs together.
-9. Propagate changes through the knowledge graph (see Propagation below).
-10. Run validation from the route.
+6. If a resolved ID is a `type: overview` doc, read it first and select only the children relevant to the current task. Do not load all children by default — use the overview as a navigation hub.
+7. Read canonical docs (`authority: canonical`) first.
+8. Follow `extends` and `includes` for additional context as needed.
+9. Follow `dependsOn` to load dependencies as supporting context (one level only, not transitive).
+10. Do the work — change code and docs together.
+11. Propagate changes through the knowledge graph (see Propagation below).
+12. Run validation from the route.
 
 ## Core Rules
 
@@ -29,6 +31,7 @@ DocDriven is Documentation Driven Development for agents and humans.
 - `Docs/tmp/` is temporary and not truth.
 - Never independently establish truth in a derived view.
 - Reference knowledge IDs instead of duplicating content.
+- Never create a knowledge doc for something fully expressed in code. Knowledge exists only for what grounding sources can't express (decisions, constraints, boundaries, strategies, ownership rules).
 - Follow the project's documented architecture and coding style.
 - Prefer long-term project consistency over local convenience.
 
@@ -46,6 +49,7 @@ Rules:
 
 - Canonical first. Always update the canonical owner before touching dependents.
 - Propagation is not optional. If a dependent exists, verify or update it.
+- **Stop condition.** If verifying a parent/dependent confirms it is still accurate (includes list correct, summary unchanged), update only its `sourceVersion` and stop propagating further upward. Only continue upward if the parent's content actually changed.
 - Flag, don't guess. If uncertain, write to `Docs/agent/gaps.md` rather than making a potentially wrong edit.
 - Use `changeSignals` as a heuristic: if the diff semantically matches a route's change signals, review that route's knowledge IDs even if no doc was directly touched.
 
@@ -55,10 +59,25 @@ The DocDriven tree is a starting scaffold. Choose the final docs from project
 evidence and reader needs.
 
 - Add a human doc only when a person has a distinct task or question.
-- Add a knowledge doc only when durable current truth needs a canonical home.
+- Add a knowledge doc only when durable current truth needs a canonical home and that truth is not already expressed in code.
 - Split routes only when it reduces context load or clarifies ownership.
 - Do not create docs for absent concepts.
 - Record uncertain needs in `Docs/agent/gaps.md`.
+
+## Hierarchy Growth
+
+When a knowledge folder accumulates 6+ leaf docs at the same level, group
+related docs into a subfolder and create an overview doc for that subfolder.
+This creates the navigable hierarchy that enables progressive routing.
+
+**Trigger:** When creating a new knowledge doc or during propagation, if the
+target folder has 6+ siblings, consider whether a group shares a concern that
+deserves its own subfolder + overview.
+
+**Test for a knowledge doc's existence:**
+1. Can I find this fact by reading code? → No doc. Use `groundedIn` to point at code.
+2. Is this a decision/rule/constraint with no home in code? → Knowledge doc.
+3. Is this a boundary that code implies but never states? → Knowledge doc.
 
 ## Project Continuity
 
