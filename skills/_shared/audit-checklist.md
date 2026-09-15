@@ -12,6 +12,8 @@ Check:
 - `context-map.md` has required columns and matches route IDs
 - docs do not duplicate canonical concepts
 - docs stay under size targets
+- oversized knowledge docs have split-required or split-recommended findings
+- split plans in `tmp/splits/` are executed or deleted, not left as truth
 - generated placeholder text is not left as completed docs
 - `tmp/` content is not treated as truth
 - validation commands match executable project files

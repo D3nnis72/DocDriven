@@ -13,10 +13,15 @@ Use this skill to check documentation drift and maintainability.
 |------|-------|-------------------|
 | **Project audit** | The repository | Where has the documentation system drifted, and is it still maintainable? |
 | **Change-scoped audit** | A diff range | Which docs stopped being true because of this change? |
+| **Maintainability pass** | Docs in scope | Which docs are oversized and need a split before or during updates? |
 
 Project audit is the default. Use change-scoped audit when a plan's final work
 unit needs the list of docs to update, or whenever someone asks "what docs does
 this change affect?". Both modes report; neither updates docs unless asked.
+
+A plan's documentation work unit runs **change-scoped audit**, then a
+**maintainability pass** on the same scope, then executes splits before other
+doc updates. See `_shared/doc-splitting.md` for split heuristics.
 
 ## Project Audit Workflow
 
@@ -105,7 +110,47 @@ Every row must name what specifically became false. Do not list docs merely
 adjacent to the topic. An empty table is a finding worth stating explicitly, not
 a default.
 
+## Maintainability Pass
+
+Run after change-scoped audit in a plan's documentation work unit. Uses the
+audit script (`docs:audit` or `audit-docdriven.mjs --format json`) for size
+findings, then applies judgment for splits.
+
+**Scope** (union of):
+
+- Every doc listed in the change-scoped audit report
+- Every knowledge doc touched in `BASE..HEAD`
+- Any knowledge doc the script flags as `split-required` (1500+ words)
+
+Do not split docs outside scope during a feature plan unless the user asked for
+project-wide doc maintenance.
+
+**Per oversized doc in scope:**
+
+1. Read `_shared/doc-splitting.md`.
+2. Write a split plan to `Docs/tmp/splits/YYYY-MM-DD-<id>-split-plan.md`.
+3. Execute the split (overview + leaves, propagation checklist).
+4. Delete the split plan.
+5. Then run normal **Update** / **Verify** actions from the change-scoped audit.
+
+Assign **Split** when `suggestedAction` is `split-required`, or when the doc is
+over 1000 words and in scope with multiple routing concerns. The script supplies
+word count and H2 headings as hints; the agent chooses flat siblings vs subfolder.
+
+Oversized docs report format (append to change-scoped audit or standalone):
+
+```markdown
+## Maintainability (oversized docs in scope)
+
+| Doc | Words | suggestedAction | Split |
+|-----|-------|-----------------|-------|
+| ... | 7330 | split-required | plan in tmp/splits, then execute |
+
+**H2 sections (hints):** listed per row in script JSON output
+```
+
 ## References
 
 - Read `_shared/audit-checklist.md`.
+- Read `_shared/doc-splitting.md` for split heuristics and propagation.
 - Read `_shared/agent-operating-contract.md`.

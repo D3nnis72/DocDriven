@@ -94,3 +94,12 @@ Add docs only when they have a clear job:
 - a tmp doc captures temporary work that is not yet truth
 
 If the evidence is weak, record a gap instead of inventing a file.
+
+## Hierarchy Growth
+
+When a knowledge folder accumulates 6+ leaf docs at the same level, group
+related docs into a subfolder and create an overview doc for that subfolder.
+
+When a single knowledge file grows beyond one routing concern or over 1000
+words, split it into an overview plus leaves (subfolder when 3+ leaves belong
+together). See `doc-splitting.md`.

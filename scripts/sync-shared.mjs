@@ -15,6 +15,7 @@ const vendorMap = {
   docdriven: [
     "agent-operating-contract.md",
     "docdriven-structure.md",
+    "doc-splitting.md",
     "writing-style.md"
   ],
   "docdriven-init": [
@@ -31,6 +32,7 @@ const vendorMap = {
   "docdriven-audit": [
     "agent-operating-contract.md",
     "audit-checklist.md",
+    "doc-splitting.md",
     "operational-scan.mjs"
   ]
 };

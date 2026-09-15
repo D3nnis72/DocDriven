@@ -318,6 +318,47 @@ function checkRouteValidation(route, file) {
   }
 }
 
+function extractH2Sections(content) {
+  const sections = [];
+  for (const line of content.split(/\r?\n/)) {
+    const match = line.match(/^##\s+(.+)$/);
+    if (match) sections.push(match[1].trim());
+  }
+  return sections;
+}
+
+function oversizedKnowledgeFinding({ relative, words, maxWords, content }) {
+  const h2Sections = extractH2Sections(content);
+  let severity = "warning";
+  let suggestedAction = "split-on-next-touch";
+
+  if (words > 3000) {
+    severity = "error";
+    suggestedAction = "split-required";
+  } else if (words > 1500) {
+    severity = "warning";
+    suggestedAction = "split-required";
+  } else if (words > maxWords) {
+    suggestedAction = "split-recommended";
+  }
+
+  const sectionHint =
+    h2Sections.length > 0
+      ? ` H2 sections: ${h2Sections.slice(0, 12).join("; ")}${h2Sections.length > 12 ? "; …" : ""}.`
+      : "";
+
+  return {
+    severity,
+    code: "oversized-doc",
+    file: relative,
+    words,
+    maxWords,
+    suggestedAction,
+    h2Sections,
+    message: `knowledge doc has ${words} words; target is ${maxWords}. suggestedAction: ${suggestedAction}.${sectionHint}`
+  };
+}
+
 function checkSizes() {
   for (const file of markdownFiles(docs)) {
     const relative = path.relative(root, file);
@@ -325,14 +366,26 @@ function checkSizes() {
     const content = fs.readFileSync(file, "utf8");
     const words = countWords(content);
     const target = sizeTargets.find((entry) => entry.pattern.test(`/${normalized}`));
-    if (target && words > target.maxWords) {
-      findings.push({
-        severity: "warning",
-        code: "oversized-doc",
-        file: relative,
-        message: `${target.type} doc has ${words} words; target is ${target.maxWords}.`
-      });
+    if (!target || words <= target.maxWords) continue;
+
+    if (target.type === "knowledge") {
+      findings.push(oversizedKnowledgeFinding({
+        relative,
+        words,
+        maxWords: target.maxWords,
+        content
+      }));
+      continue;
     }
+
+    findings.push({
+      severity: "warning",
+      code: "oversized-doc",
+      file: relative,
+      words,
+      maxWords: target.maxWords,
+      message: `${target.type} doc has ${words} words; target is ${target.maxWords}.`
+    });
   }
 }
 

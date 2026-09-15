@@ -15,10 +15,12 @@ DocDriven is Documentation Driven Development for agents and humans.
 4. Load only the smallest relevant route shard.
 5. Read the route's `readFirst` docs.
 6. Inspect the route's `codeAreas`.
-7. Change code and docs together.
-8. Update route shards when ownership, validation, or structure changes.
-9. Record unknowns in `Docs/agent/gaps.md`.
-10. Run validation from the route or `Docs/agent/validation.md`.
+7. Before editing a knowledge doc, check size and scope. Split first when the
+   file is oversized or mixes multiple routing concerns (see `_shared/doc-splitting.md`).
+8. Change code and docs together.
+9. Update route shards when ownership, validation, or structure changes.
+10. Record unknowns in `Docs/agent/gaps.md`.
+11. Run validation from the route or `Docs/agent/validation.md`.
 
 ## Core Rules
 
@@ -44,6 +46,9 @@ knowledge docs, and route shards from repository evidence and reader needs.
 
 - Add a human doc only when a person has a distinct task or question.
 - Add a knowledge doc only when durable current truth needs a canonical home.
+- Split knowledge docs when they exceed size targets or mix routing concerns.
+  Prefer a subfolder + overview when 3+ leaves belong together; flat siblings
+  when fewer leaves suffice. See `_shared/doc-splitting.md`.
 - Split route shards only when it reduces context load or clarifies ownership.
 - Do not create docs for absent concepts just because a template names them.
 - Record uncertain documentation needs in `Docs/agent/gaps.md` instead of inventing structure.
@@ -114,8 +119,22 @@ When finishing DocDriven work, report:
 - Validation run
 - Gaps recorded
 
+## Knowledge Doc Splits
+
+Oversized knowledge files defeat routing. Before appending to a knowledge doc:
+
+- Over 1000 words, or more than one independently routable concern → split
+  before writing.
+- Parent keeps the stable ID and becomes `type: overview` with `includes`.
+- Leaves `extend` the parent and carry `groundedIn` when they explain code.
+- Split `dependsOn` per leaf; do not copy the monolith's full list everywhere.
+
+Full heuristics, split-plan format, and propagation checklist:
+`_shared/doc-splitting.md`.
+
 ## References
 
 - Read `_shared/docdriven-structure.md` for the default documentation model.
+- Read `_shared/doc-splitting.md` before splitting or restructuring knowledge docs.
 - Read `_shared/agent-operating-contract.md` for route-table requirements.
 - Read `_shared/writing-style.md` before writing or editing docs.

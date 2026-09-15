@@ -59,7 +59,8 @@ Before treating the scaffold as complete:
 
 - remove or avoid docs for absent concepts
 - add docs for real setup, operational, domain, or interface needs
-- split docs only when it improves navigation or ownership
+- split knowledge docs when they exceed size targets or mix routing concerns
+  (see doc-splitting.md); split other docs when navigation or ownership improves
 - record uncertain docs work in `agent/gaps.md`
 
 Architecture docs are adaptive. The default `knowledge/architecture/README.md`
