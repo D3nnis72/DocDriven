@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "area": "features",
   "routes": [
     {
@@ -9,18 +9,16 @@
         "feature behavior",
         "user-visible behavior"
       ],
-      "readFirst": [
-        "knowledge/features/README.md"
-      ],
-      "canonicalDocs": [
-        "knowledge/features/README.md"
+      "knowledge": [
+        "features.general"
       ],
       "codeAreas": [
         "src/**"
       ],
-      "updateDocs": [
-        "knowledge/features/README.md",
-        "human/overview.md"
+      "changeSignals": [
+        "user-facing behavior",
+        "feature logic",
+        "business rules"
       ],
       "validation": [
         "test"

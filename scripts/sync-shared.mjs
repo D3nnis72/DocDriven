@@ -16,16 +16,14 @@ const vendorMap = {
     "agent-operating-contract.md",
     "docdriven-structure.md",
     "doc-splitting.md",
+    "knowledge-schema.md",
     "writing-style.md"
   ],
-  "docdriven-init": [
+  "docdriven-setup": [
     "agent-operating-contract.md",
-    "operational-scan.mjs",
-    "repo-local-skill-template.md"
-  ],
-  "docdriven-build": [
-    "agent-operating-contract.md",
-    "docs-tree-template.md",
+    "docdriven-structure.md",
+    "doc-splitting.md",
+    "knowledge-schema.md",
     "operational-scan.mjs",
     "writing-style.md"
   ],
@@ -33,6 +31,7 @@ const vendorMap = {
     "agent-operating-contract.md",
     "audit-checklist.md",
     "doc-splitting.md",
+    "knowledge-schema.md",
     "operational-scan.mjs"
   ]
 };

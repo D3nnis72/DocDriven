@@ -1,3 +1,10 @@
+---
+id: human.overview
+type: view
+derivedFrom:
+  - architecture.general
+  - features.general
+---
 # Overview
 
 minimal-js is a JavaScript/Node.js project.

@@ -1,3 +1,9 @@
+---
+id: human.setup
+type: view
+derivedFrom:
+  - operations.general
+---
 # Setup
 
 Stack: JavaScript/Node.js
@@ -23,4 +29,4 @@ Package manager: npm
 - `troubleshooting.md`: common setup and runtime checks
 - `maintenance.md`: recurring operational tasks
 
-Detailed operations truth belongs in `../knowledge/operations/README.md`.
+Detailed operations truth belongs in canonical knowledge → `operations.general`.

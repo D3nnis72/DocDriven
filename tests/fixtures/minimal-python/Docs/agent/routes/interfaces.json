@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "area": "interfaces",
   "routes": [
     {
@@ -11,18 +11,16 @@
         "cli change",
         "integration change"
       ],
-      "readFirst": [
-        "knowledge/interfaces/README.md"
-      ],
-      "canonicalDocs": [
-        "knowledge/interfaces/README.md"
+      "knowledge": [
+        "interfaces.general"
       ],
       "codeAreas": [
         "src/**"
       ],
-      "updateDocs": [
-        "knowledge/interfaces/README.md",
-        "knowledge/features/README.md"
+      "changeSignals": [
+        "public API",
+        "CLI commands",
+        "integration contracts"
       ],
       "validation": [
         "test"

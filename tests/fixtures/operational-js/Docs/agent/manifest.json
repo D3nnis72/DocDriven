@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "docsRoot": "Docs",
   "routeIndexes": [
     "agent/routes/architecture.json",
@@ -7,6 +7,7 @@
     "agent/routes/interfaces.json",
     "agent/routes/operations.json"
   ],
+  "knowledgeIndex": "agent/knowledge-index.json",
   "contextMap": "agent/context-map.md",
   "gaps": "agent/gaps.md"
 }

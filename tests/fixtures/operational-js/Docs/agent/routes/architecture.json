@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "area": "architecture",
   "routes": [
     {
@@ -18,18 +18,18 @@
         "shared primitive",
         "composition pattern"
       ],
-      "readFirst": [
-        "knowledge/architecture/README.md"
-      ],
-      "canonicalDocs": [
-        "knowledge/architecture/README.md"
+      "knowledge": [
+        "architecture.general"
       ],
       "codeAreas": [
         "src/**"
       ],
-      "updateDocs": [
-        "knowledge/architecture/README.md",
-        "human/architecture.md"
+      "changeSignals": [
+        "structural ownership",
+        "dependency direction",
+        "import boundaries",
+        "configuration flow",
+        "reuse patterns"
       ],
       "validation": [
         "test"

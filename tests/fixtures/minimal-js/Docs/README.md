@@ -1,10 +1,11 @@
 # minimal-js Docs
 
-DocDriven documentation separates human orientation, agent protocol, canonical knowledge, and temporary working material.
+DocDriven documentation with knowledge identity and dependency-aware propagation.
 
 ## Start Here
 
 - Human orientation: `human/overview.md`
 - Agent routing: `agent/context-map.md`
-- Canonical project explanation: `knowledge/README.md`
+- Knowledge index: `agent/knowledge-index.json`
+- Canonical knowledge: `knowledge/README.md`
 - Temporary work: `tmp/README.md`

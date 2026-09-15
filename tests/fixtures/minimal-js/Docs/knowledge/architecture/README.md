@@ -1,37 +1,51 @@
+---
+id: architecture.general
+type: architecture
+scope: architecture
+authority: canonical
+dependsOn: []
+updateWhen:
+  - system boundaries change
+  - dependency direction changes
+  - structural ownership changes
+  - configuration flow changes
+  - reuse patterns change
+---
 # Architecture
 
-Architecture docs describe how this project is actually structured. They are an adaptive contract for long-term project continuity, not a generic folder template.
+Architecture docs describe how this project is actually structured. They are an
+adaptive contract for long-term project continuity.
 
 ## Adaptive Architecture Contract
 
-Document current system shape, boundaries, dependency direction, runtime flow, and cross-cutting patterns. Add, split, rename, or consolidate docs and code areas only when repository evidence shows stable responsibility, repeated patterns, dependency boundaries, configuration rules, shared contracts, or validation needs.
-
-Do not invent a standard structure because an agent prefers it.
+Document current system shape, boundaries, dependency direction, runtime flow,
+and cross-cutting patterns. Add, split, rename, or consolidate structure only
+when repository evidence justifies it.
 
 ## Project Continuity Rules
 
-- Follow project docs, nearby code, formatter, linter, and validation commands before applying generic agent taste.
+- Follow project docs, nearby code, formatter, linter, and validation commands.
 - Prefer long-term project consistency over local convenience.
 - New durable conventions require docs and route updates.
-- If the convention is unclear, record a gap instead of silently starting a new pattern.
+- If the convention is unclear, record a gap.
 
 ## Structural Ownership
 
-Document where authoritative code contracts and structural concepts live: configuration modules, API contracts, schemas, domain models, provider adapters, shared utilities, generated code, and package boundaries.
+Document where authoritative code contracts live: configuration modules, API
+contracts, schemas, domain models, provider adapters, shared utilities.
 
-Do not copy type, schema, or interface definitions into docs. Explain where authoritative code lives, which module owns it, how consumers access it, and when changes require docs or route updates.
+Do not copy type or schema definitions into docs. Explain where code lives,
+which module owns it, and when changes require docs updates.
 
 ## Configuration First
 
-Runtime configuration should be discoverable through documented project paths. Avoid hardcoded URLs, provider IDs, secrets, feature flags, limits, and other runtime settings in feature code when the project has or needs a config flow.
-
-Document where configuration is loaded, validated, typed if applicable, and overridden by environment or deployment settings. Detailed operational setup belongs in `../operations/README.md` or a routed operations doc.
+Runtime configuration should be discoverable through documented paths. Document
+where configuration is loaded, validated, and overridden.
 
 ## Reuse And Composition
 
-Prefer existing project primitives over new one-off implementations. Look for reusable components, helpers, hooks, adapters, contracts, config helpers, test helpers, and established composition patterns before creating a new abstraction.
-
-Keep feature-local code local until reuse is real. Promote reusable code only when repeated use, stable responsibility, or a documented composition pattern justifies it. Do not create parallel components or helpers for concepts that already have a project home.
+Prefer existing project primitives over new one-off implementations. Keep
+feature-local code local until reuse is real.
 
 ## Current Structure
 
@@ -43,8 +57,8 @@ Record allowed dependency direction and import boundaries when verified.
 
 ## Coding Patterns
 
-Record durable coding patterns that future agents should follow. Keep this focused on project-specific conventions, not generic style advice.
+Record durable coding patterns that future agents should follow.
 
 ## Open Questions
 
-Record uncertain architecture ownership in `../../agent/gaps.md` instead of guessing.
+Record uncertain architecture ownership in `../../agent/gaps.md`.

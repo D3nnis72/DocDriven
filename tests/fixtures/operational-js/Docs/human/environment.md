@@ -1,3 +1,9 @@
+---
+id: human.operations.environment
+type: view
+derivedFrom:
+  - operations.general
+---
 # Environment
 
 Environment variables and secret setup for local development.
@@ -12,4 +18,4 @@ Environment variables and secret setup for local development.
 Evidence:
 - `.env.example`
 
-Deeper configuration truth belongs in `../knowledge/operations/README.md`.
+Deeper truth belongs in canonical knowledge → `operations.general`.
