@@ -224,6 +224,7 @@ as `environment.md`, `configuration.md`, `services.md`, `deployment.md`,
 Human docs contain actionable orientation. Deeper truth belongs in
 `Docs/knowledge/`, with human docs linking there via knowledge IDs.
 
-When a single knowledge file grows beyond one routing concern or over 1000
-words, split it into an overview plus leaves (subfolder when 3+ leaves belong
-together). See `doc-splitting.md`.
+When a single knowledge file mixes routing concerns, split immediately. When it
+exceeds 3,000 words, split by default (subfolder when 3+ leaves belong
+together). The 1,500-3,000 word band needs review, not automatic splitting.
+See `doc-splitting.md`.

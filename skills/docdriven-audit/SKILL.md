@@ -130,7 +130,7 @@ findings, then applies judgment for splits.
 
 - Every doc listed in the change-scoped audit report
 - Every knowledge doc touched in `BASE..HEAD`
-- Any knowledge doc the script flags as `split-required` (1500+ words)
+- Any knowledge doc the script flags as `split-required` (over 3,000 words)
 
 Do not split docs outside scope during a feature plan unless the user asked for
 project-wide doc maintenance.
@@ -143,9 +143,12 @@ project-wide doc maintenance.
 4. Delete the split plan.
 5. Then run normal **Update** / **Verify** actions from the change-scoped audit.
 
-Assign **Split** when `suggestedAction` is `split-required`, or when the doc is
-over 1000 words and in scope with multiple routing concerns. The script supplies
-word count and H2 headings as hints; the agent chooses flat siblings vs subfolder.
+Assign **Split** when `suggestedAction` is `split-required`, when multiple
+routing concerns are present at any size, or when a `split-review-required` doc
+(1,500–3,000 words) clearly outgrew one leaf. Assign **Review** for
+`split-review-required` when the doc may still be one cohesive concern. The
+script supplies word count and H2 headings as hints; the agent chooses flat
+siblings vs subfolder or documents a kept exception with narrowed routing.
 
 Oversized docs report format (append to change-scoped audit or standalone):
 

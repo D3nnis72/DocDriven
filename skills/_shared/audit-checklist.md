@@ -14,6 +14,7 @@
 ## Graph Checks (check-graph)
 
 - No circular `extends` chains
+- No circular `dependsOn` chains
 - If A `includes` B, then B `extends` A (bidirectional consistency)
 - All `dependsOn` targets exist as declared IDs
 - All `derivedFrom` targets are canonical docs (cannot derive from a view)
@@ -46,8 +47,9 @@
 ## Content Checks
 
 - Required DocDriven files exist
-- Docs stay under size targets (human 700, agent 500, knowledge 1000, router 250 words)
-- Oversized knowledge docs have split-required or split-recommended findings
+- Docs stay under size targets (human 700, agent 500, knowledge 1500 focused leaf,
+  router 250 words; knowledge 1500-3000 review band; over 3000 split by default)
+- Oversized knowledge docs have split-required or split-review-required findings
 - Split plans in `tmp/splits/` are executed or deleted, not left as truth
 - Generated placeholder text is not left as completed docs
 - `tmp/` content is not treated as truth

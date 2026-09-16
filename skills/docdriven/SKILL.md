@@ -128,11 +128,15 @@ When finishing DocDriven work, report:
 
 Oversized knowledge files defeat routing. Before appending to a knowledge doc:
 
-- Over 1000 words, or more than one independently routable concern → split
-  before writing.
+- Multiple independently routable concerns → split immediately, any size.
+- Over 3,000 words → split by default unless a documented exception applies
+  (brainstorm, research snapshot, ledger, historical reference).
+- 1,500–3,000 words → review during maintainability pass; split only if concerns
+  diverge.
 - Parent keeps the stable ID and becomes `type: overview` with `includes`.
 - Leaves `extend` the parent and carry `groundedIn` when they explain code.
 - Split `dependsOn` per leaf; do not copy the monolith's full list everywhere.
+- Long exception docs must not sit on broad routes that never need them.
 
 Full heuristics, split-plan format, and propagation checklist:
 `_shared/doc-splitting.md`.

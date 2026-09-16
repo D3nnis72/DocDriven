@@ -12,6 +12,7 @@ const findings = [];
 const graph = buildGraph();
 
 checkCircularExtends();
+checkCircularDependsOn();
 checkBidirectionalConsistency();
 checkTargetsExist();
 checkDerivedFromTargetsAreCanonical();
@@ -67,6 +68,40 @@ function checkCircularExtends() {
       visited.add(current);
       const parent = graph.get(current);
       current = parent ? parent.extends : null;
+    }
+  }
+}
+
+function checkCircularDependsOn() {
+  const visiting = new Set();
+  const visited = new Set();
+
+  function dfs(id, startFile) {
+    if (visiting.has(id)) {
+      findings.push({
+        severity: "error",
+        code: "circular-dependsOn",
+        file: startFile,
+        message: `Circular dependsOn chain detected involving: ${id}.`
+      });
+      return;
+    }
+    if (visited.has(id)) return;
+
+    visiting.add(id);
+    const node = graph.get(id);
+    if (node) {
+      for (const dep of node.dependsOn) {
+        dfs(dep, startFile);
+      }
+    }
+    visiting.delete(id);
+    visited.add(id);
+  }
+
+  for (const [id, node] of graph) {
+    if (!visited.has(id)) {
+      dfs(id, node.file);
     }
   }
 }

@@ -42,7 +42,7 @@ const requiredColumns = [
 const sizeTargets = [
   { pattern: /\/human\//, maxWords: 700, type: "human" },
   { pattern: /\/agent\//, maxWords: 500, type: "agent" },
-  { pattern: /\/knowledge\//, maxWords: 1000, type: "knowledge" },
+  { pattern: /\/knowledge\//, maxWords: 1500, type: "knowledge" },
   { pattern: /(^|\/)README\.md$/, maxWords: 250, type: "router" }
 ];
 
@@ -364,18 +364,12 @@ function extractH2Sections(content) {
 
 function oversizedKnowledgeFinding({ relative, words, maxWords, content }) {
   const h2Sections = extractH2Sections(content);
-  let severity = "warning";
-  let suggestedAction = "split-on-next-touch";
-
-  if (words > 3000) {
-    severity = "error";
-    suggestedAction = "split-required";
-  } else if (words > 1500) {
-    severity = "warning";
-    suggestedAction = "split-required";
-  } else if (words > maxWords) {
-    suggestedAction = "split-recommended";
-  }
+  const severity = words > 3000 ? "error" : "warning";
+  const suggestedAction = words > 3000 ? "split-required" : "split-review-required";
+  const band =
+    words > 3000
+      ? "over 3000 words (split by default)"
+      : "1500-3000 words (review required)";
 
   const sectionHint =
     h2Sections.length > 0
@@ -390,7 +384,7 @@ function oversizedKnowledgeFinding({ relative, words, maxWords, content }) {
     maxWords,
     suggestedAction,
     h2Sections,
-    message: `knowledge doc has ${words} words; target is ${maxWords}. suggestedAction: ${suggestedAction}.${sectionHint}`
+    message: `knowledge doc has ${words} words; ${band}. suggestedAction: ${suggestedAction}.${sectionHint}`
   };
 }
 
@@ -404,6 +398,7 @@ function checkSizes() {
     if (!target || words <= target.maxWords) continue;
 
     if (target.type === "knowledge") {
+      if (words <= target.maxWords) continue;
       findings.push(oversizedKnowledgeFinding({
         relative,
         words,

@@ -17,9 +17,10 @@ Size targets:
 - Router files: 100-250 words.
 - Human files: 300-700 words.
 - Agent protocol files: 200-500 words.
-- Knowledge leaf files: 300-1000 words.
+- Knowledge leaf files: 300-1,500 words for a focused leaf; 1,500-3,000 needs
+  review; over 3,000 split by default unless a documented exception applies.
 - Knowledge overview files: 100-400 words of navigation; link to leaves.
 
-When a knowledge file exceeds 1000 words or answers multiple routing concerns,
-split before adding more content. See `doc-splitting.md`.
+Split immediately when multiple independently routable concerns appear, regardless
+of size. See `doc-splitting.md`.
 
