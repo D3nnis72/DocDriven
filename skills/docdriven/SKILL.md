@@ -34,6 +34,10 @@ DocDriven is Documentation Driven Development for agents and humans.
 - Never independently establish truth in a derived view.
 - Reference knowledge IDs instead of duplicating content.
 - Never create a knowledge doc for something fully expressed in code. Knowledge exists only for what grounding sources can't express (decisions, constraints, boundaries, strategies, ownership rules).
+- Name files after the concern they answer, in lowercase kebab-case. No order
+  prefixes, no `part-2` (see `_shared/knowledge-schema.md`).
+- No numbers in headings and no positional references ("see point 7"). Link
+  knowledge IDs. Numbers are only for ordered steps in procedure docs.
 - Follow the project's documented architecture and coding style.
 - Prefer long-term project consistency over local convenience.
 
@@ -175,6 +179,8 @@ Oversized knowledge files defeat routing. Before appending to a knowledge doc:
 - Leaves `extend` the parent and carry `groundedIn` when they explain code.
 - Split `dependsOn` per leaf; do not copy the monolith's full list everywhere.
 - Long exception docs must not sit on broad routes that never need them.
+- Moved sections lose their heading numbers, positional references become IDs,
+  and leaves are named after their concern, never by order.
 
 Full heuristics, split-plan format, and propagation checklist:
 `_shared/doc-splitting.md`.

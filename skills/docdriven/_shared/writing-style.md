@@ -12,6 +12,18 @@
   reference it by ID. A single orienting sentence is acceptable. Anything more
   belongs in the canonical owner.
 
+## Headings and references
+
+- No numbers in headings. A number is a position, and positions change when a
+  doc splits or sections move. Exception: ordered steps in a `procedure` doc,
+  counted from 1 in that file.
+- A project that needs stable numbers (requirements, decisions) uses IDs that
+  never move (`FR-12`, `ADR-004`), not positions.
+- Never refer to a position ("see point 7", "section 3", "§4"). Link the
+  knowledge ID or the heading anchor.
+- Sections that move into another file lose their old numbers, and positional
+  references to them are replaced across the whole package.
+
 ## Human-facing docs
 
 The rules above keep docs short. For docs that people read to learn a domain

@@ -27,6 +27,28 @@ identity, type, authority, and relationships.
 
 IDs must be unique across the entire docs tree.
 
+## File Naming
+
+A name is part of routing. It tells an agent what a doc answers before the file
+is opened.
+
+- Lowercase ASCII kebab-case for files and folders (`pricing-rules.md`).
+  `README.md` is the only exception.
+- The file name matches the last segment of the ID (`features.pricing.rules` →
+  `rules.md`). A `README.md` overview keeps the ID of the doc it replaced.
+- Name after the concern the doc answers, never after its position or origin.
+  No order prefixes (`01-`, `07-`), no `part-2`, `-2`, `-final`, `-old`, `-copy`.
+  Reading order lives in the overview doc.
+- Inside a package folder, do not repeat the folder name as a prefix
+  (`pricing/rules.md`, not `pricing/pricing-rules.md`).
+- No vague names (`misc`, `notes`, `details`, `other`) outside `tmp/`.
+- One language for file names and IDs per project. Record the choice in
+  `Docs/agent/naming.md` when it is not English.
+- A date in the name is for bounded reports only
+  (`2026-10-16-churn-analysis.md`), never for living docs.
+- Renaming a file keeps the ID. Update `knowledge-index.json` and grep the old
+  path.
+
 ## Relationship Types
 
 | Relationship | Direction | Meaning | Example |

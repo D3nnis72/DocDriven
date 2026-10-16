@@ -777,17 +777,21 @@ function writingStyle() {
 - Link to canonical knowledge IDs instead of copying content.
 - Replace stale text instead of appending corrections.
 - Include frontmatter on all durable docs.
+- No numbers in headings and no positional references like "see point 7". Link knowledge IDs.
 `;
 }
 
 function naming() {
   return `# Naming
 
-- Use lowercase kebab-case file names.
+- Use lowercase ASCII kebab-case for file and folder names.
 - Use \`README.md\` as a local router for folders.
+- Name docs after the concern they answer: stable concepts, features, interfaces, or operations.
+- Never name by position or revision: no \`01-\`, \`part-2\`, \`-2\`, \`-final\`, \`-old\`. Reading order lives in the overview doc.
 - Avoid vague names like \`misc.md\`, \`notes.md\`, and \`details.md\` outside \`tmp/\`.
-- Name docs after stable concepts, features, interfaces, or operations.
-- Knowledge IDs use dot.separated.names matching scope.concept pattern.
+- Inside a package folder, do not repeat the folder name as a prefix.
+- Use one language for file names and IDs. Record the choice here when the project is not English.
+- Knowledge IDs use dot.separated.names matching scope.concept pattern. The file name matches the last ID segment.
 `;
 }
 

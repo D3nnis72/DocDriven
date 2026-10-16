@@ -98,7 +98,12 @@ Run `docs:graph` after package moves. Treat `missing-bidirectional-includes`,
 2. Target 300–1,500 words per focused leaf.
 3. Merge small sections that only make sense together.
 4. Do not create one file per H2 by default.
-5. IDs: `features.foo.bar-baz` → `bar-baz.md` (names from concerns, not headings).
+5. IDs: `features.foo.bar-baz` → `bar-baz.md` (names from concerns, not
+   headings). Never name a leaf by order (`foo-2.md`, `foo-part-2.md`, `03-foo.md`).
+   See File Naming in `knowledge-schema.md`.
+6. Moved sections start clean. Drop old heading numbers and replace positional
+   references ("see point 7") with knowledge IDs or anchors. Each leaf gets its
+   own H1; no number from the monolith survives.
 
 Ask the user only when two split shapes are equally valid. Over 3,000 words with
 multiple concerns → split without asking unless a documented exception applies.
@@ -120,6 +125,7 @@ exceptions in `Docs/agent/gaps.md`.
 |--------|------|----------|---------|-----------|------------|
 | ... | ... | ... | parent | ... | ... |
 
+**Heading fixes:** numbered headings removed, positional references replaced (list files)
 **Not splitting:** ...
 **Exception rationale:** ... (if keeping >3k words)
 **Route narrowing:** ... (if exception — which routes should load this)
@@ -133,12 +139,17 @@ After a split:
 
 1. Create overview + leaves with frontmatter.
 2. Move content once; no duplication between parent and children.
-3. Update `knowledge-index.json` and route shard `knowledge` IDs.
-4. Point routes at the smallest leaf per task type.
-5. Update existing `dependsOn` / `derivedFrom` references.
-6. Delete the monolith file (or leave a one-line stub only if external links
+3. Normalize the moved sections: remove heading numbers, then grep the whole
+   package and its dependents for `Punkt N`, `section N`, `§N` and replace them
+   with knowledge IDs or anchors.
+4. Update `knowledge-index.json` and route shard `knowledge` IDs.
+5. Point routes at the smallest leaf per task type.
+6. Update existing `dependsOn` / `derivedFrom` references.
+7. Delete the monolith file (or leave a one-line stub only if external links
    require it — prefer updating references).
-7. Delete the split plan in `Docs/tmp/splits/`.
+8. Run the audit. Fix `heading-numbering`, `positional-reference`,
+   `invalid-file-name`, and `ordinal-file-name` findings in the package.
+9. Delete the split plan in `Docs/tmp/splits/`.
 
 ## What not to do
 
@@ -149,3 +160,5 @@ After a split:
 - Auto-split every doc over 1,500 words without checking routing concerns.
 - Leave long exception docs on broad routes that never need them.
 - Splitting during spec writing — splits happen at implementation or audit time.
+- Carry heading numbers or positional references from the monolith into leaves.
+- Name leaves by order (`-2`, `part-2`, `01-`) instead of by concern.

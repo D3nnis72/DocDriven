@@ -46,12 +46,17 @@ const sizeTargets = [
   { pattern: /(^|\/)README\.md$/, maxWords: 250, type: "router" }
 ];
 
+const vagueNames = new Set(["misc", "notes", "details", "other", "stuff", "scratch", "untitled"]);
+const leftoverNameTokens = new Set(["copy", "final", "old", "backup", "draft"]);
+
 const findings = [];
 
 checkRequiredFiles();
 const routeGraph = checkManifest();
 checkContextMap();
 checkSizes();
+checkFileNames();
+checkHeadings();
 checkTmp();
 checkOwnedCodeMarkers();
 if (routeGraph) {
@@ -416,6 +421,106 @@ function checkSizes() {
       maxWords: target.maxWords,
       message: `${target.type} doc has ${words} words; target is ${target.maxWords}.`
     });
+  }
+}
+
+function checkFileNames() {
+  const reportedDirs = new Set();
+  for (const file of markdownFiles(docs)) {
+    const relative = path.relative(docs, file).split(path.sep).join("/");
+    if (relative.startsWith("tmp/")) continue;
+    const segments = relative.split("/");
+    const fileName = segments.pop();
+
+    let dirPath = "";
+    for (const dir of segments) {
+      dirPath = dirPath ? `${dirPath}/${dir}` : dir;
+      if (reportedDirs.has(dirPath)) continue;
+      reportedDirs.add(dirPath);
+      reportNameProblem(path.join(docs, dirPath), dir, null);
+    }
+
+    if (fileName === "README.md") continue;
+    const siblings = new Set(
+      fs.readdirSync(path.dirname(file)).filter((name) => name.endsWith(".md")).map((name) => name.slice(0, -3))
+    );
+    reportNameProblem(file, fileName.slice(0, -3), siblings, fileName);
+  }
+}
+
+function reportNameProblem(absolute, base, siblings, display = base) {
+  const problem = nameProblem(base, siblings);
+  if (!problem) return;
+  findings.push({
+    severity: "warning",
+    code: problem.code,
+    file: path.relative(root, absolute),
+    message: `"${display}" ${problem.reason} Rename it and update knowledge-index.json and references.`
+  });
+}
+
+function nameProblem(base, siblings) {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(base)) {
+    return { code: "invalid-file-name", reason: "is not lowercase ASCII kebab-case." };
+  }
+  if (/^\d{1,3}-/.test(base)) {
+    return { code: "ordinal-file-name", reason: "starts with an order number. Order lives in the overview doc, not in names." };
+  }
+  if (/(^|-)(part|teil)-?\d+(-|$)/.test(base) || base.split("-").some((token) => leftoverNameTokens.has(token))) {
+    return { code: "ordinal-file-name", reason: "names a position or revision, not a concern. Name it after what it answers." };
+  }
+  const numbered = base.match(/^(.+)-v?\d{1,2}$/);
+  if (numbered && siblings && (siblings.has(numbered[1]) || siblings.has(`${numbered[1]}-1`))) {
+    return { code: "ordinal-file-name", reason: "is a numbered copy of a sibling. Name it after what it answers." };
+  }
+  if (vagueNames.has(base)) {
+    return { code: "vague-file-name", reason: "is a vague name. Name docs after stable concepts, features, interfaces, or operations." };
+  }
+  return null;
+}
+
+function checkHeadings() {
+  const files = [...markdownFiles(path.join(docs, "knowledge")), ...markdownFiles(path.join(docs, "human"))];
+  for (const file of files) {
+    const content = fs.readFileSync(file, "utf8");
+    const type = parseFrontmatter(content)?.type;
+    const body = content
+      .replace(/^---[\s\S]*?---/, "")
+      .replace(/```[\s\S]*?```/g, "");
+
+    const numbers = [];
+    for (const line of body.split(/\r?\n/)) {
+      const match = line.match(/^##\s+(\d+)(?:(?:\.\d+)+|[.)])\s+\S/);
+      if (match) numbers.push(Number(match[1]));
+    }
+    if (numbers.length > 0) {
+      const inOrder = numbers.every((number, index) => number === index + 1);
+      if (!inOrder) {
+        findings.push({
+          severity: "warning",
+          code: "heading-numbering",
+          file: path.relative(root, file),
+          message: `H2 headings are numbered ${numbers.join(", ")}. A file counts from 1 without gaps; leftover numbers from a split or edit make the order lie. Remove the numbers.`
+        });
+      } else if (type !== "procedure") {
+        findings.push({
+          severity: "info",
+          code: "numbered-headings",
+          file: path.relative(root, file),
+          message: "H2 headings are numbered. Numbers belong only to ordered steps in procedure docs; they break when the doc is split."
+        });
+      }
+    }
+
+    const references = [...body.matchAll(/\b(?:punkt|abschnitt|kapitel|section|chapter|point)\s+\d+\b|§\s?\d+/gi)].map((match) => match[0]);
+    if (references.length > 0) {
+      findings.push({
+        severity: "warning",
+        code: "positional-reference",
+        file: path.relative(root, file),
+        message: `Positional references (${[...new Set(references)].slice(0, 3).join("; ")}) break when sections move. Reference a knowledge ID or heading anchor instead; ignore if it cites an external document.`
+      });
+    }
   }
 }
 

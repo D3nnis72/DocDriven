@@ -11,6 +11,8 @@ testGeneratedArchitectureContract();
 testGeneratedProjectSkillContinuityRules();
 testAuditFlagsWeakArchitectureDocs();
 testAuditFlagsUndocumentedReusePatterns();
+testAuditFlagsHeadingNumberingAfterSplit();
+testAuditFlagsFileNames();
 testCheckFrontmatter();
 testCheckGraph();
 testCheckImpact();
@@ -176,6 +178,96 @@ function testAuditFlagsUndocumentedReusePatterns() {
     output.findings.some((finding) => finding.code === "undocumented-reuse-pattern"),
     "expected audit to report undocumented-reuse-pattern"
   );
+}
+
+function testAuditFlagsHeadingNumberingAfterSplit() {
+  const root = makeTempProject("heading-numbering");
+  const dir = path.join(root, "Docs/knowledge/features/pricing");
+  fs.mkdirSync(dir, { recursive: true });
+  const leaf = (id, headings, extra = "") => [
+    "---",
+    `id: ${id}`,
+    "type: rule",
+    "authority: canonical",
+    "---",
+    `# ${id}`,
+    ...headings.flatMap((heading) => ["", heading, "", "Text."]),
+    extra
+  ].join("\n");
+
+  // The three leaves of a split monolith: one starts at 7, one at 3, one clean.
+  fs.writeFileSync(path.join(dir, "rules.md"), leaf("features.pricing.rules", ["## 7. Rules", "## 8. Exceptions"]));
+  fs.writeFileSync(path.join(dir, "tiers.md"), leaf("features.pricing.tiers", ["## 3. Tiers"], "See point 4 for limits."));
+  fs.writeFileSync(path.join(dir, "billing.md"), leaf("features.pricing.billing", ["## Billing", "## Invoices"], "A paragraph about 3 principles."));
+
+  const findings = auditJson(root);
+  const forFile = (code, name) => findings.filter((f) => f.code === code && f.file.endsWith(name));
+  assert.equal(forFile("heading-numbering", "rules.md").length, 1, "expected rules.md (7, 8) to be flagged");
+  assert.equal(forFile("heading-numbering", "tiers.md").length, 1, "expected tiers.md (3) to be flagged");
+  assert.equal(forFile("positional-reference", "tiers.md").length, 1, "expected 'point 4' to be flagged");
+  assert.equal(forFile("heading-numbering", "billing.md").length, 0, "unnumbered headings must pass");
+  assert.equal(forFile("positional-reference", "billing.md").length, 0, "'3 principles' is not a positional reference");
+
+  // Clean 1..n numbering is fine in a procedure, a nudge elsewhere.
+  fs.writeFileSync(path.join(dir, "runbook.md"), [
+    "---", "id: features.pricing.runbook", "type: procedure", "authority: canonical", "---",
+    "# Runbook", "", "## 1. Prepare", "", "Text.", "", "## 2. Run", "", "Text."
+  ].join("\n"));
+  fs.writeFileSync(path.join(dir, "ordered.md"), [
+    "---", "id: features.pricing.ordered", "type: rule", "authority: canonical", "---",
+    "# Ordered", "", "## 1. First", "", "Text.", "", "## 2. Second", "", "Text."
+  ].join("\n"));
+  const again = auditJson(root);
+  assert.ok(!again.some((f) => f.file.endsWith("runbook.md") && /numbering|numbered/.test(f.code)), "procedure steps 1..n must pass");
+  assert.ok(again.some((f) => f.file.endsWith("ordered.md") && f.code === "numbered-headings"), "numbered headings in a rule doc get a nudge");
+}
+
+function testAuditFlagsFileNames() {
+  const root = makeTempProject("file-names");
+  const dir = path.join(root, "Docs/knowledge/features/pricing");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(path.join(root, "Docs/tmp/splits"), { recursive: true });
+  fs.mkdirSync(path.join(root, "Docs/knowledge/features/01-intro"), { recursive: true });
+  const body = "# Doc\n\nText.\n";
+  for (const name of [
+    "pricing-rules.md", // fine
+    "2026-10-16-churn-analysis.md", // dated report, fine
+    "postgres-15.md", // version, no sibling, fine
+    "Pricing_Tiers.md", // case and underscore
+    "03-billing.md", // order prefix
+    "rules-part-2.md", // position
+    "rules-final.md", // revision
+    "tiers.md",
+    "tiers-2.md", // numbered copy of sibling
+    "notes.md" // vague
+  ]) fs.writeFileSync(path.join(dir, name), body);
+  fs.writeFileSync(path.join(dir, "README.md"), body);
+  fs.writeFileSync(path.join(root, "Docs/knowledge/features/01-intro/overview.md"), body);
+  fs.writeFileSync(path.join(root, "Docs/tmp/splits/2026-10-16-Some_Plan.md"), body);
+
+  const findings = auditJson(root);
+  const flagged = new Map(findings.filter((f) => /file-name$/.test(f.code)).map((f) => [path.basename(f.file), f.code]));
+  assert.equal(flagged.get("Pricing_Tiers.md"), "invalid-file-name");
+  assert.equal(flagged.get("03-billing.md"), "ordinal-file-name");
+  assert.equal(flagged.get("rules-part-2.md"), "ordinal-file-name");
+  assert.equal(flagged.get("rules-final.md"), "ordinal-file-name");
+  assert.equal(flagged.get("tiers-2.md"), "ordinal-file-name");
+  assert.equal(flagged.get("notes.md"), "vague-file-name");
+  assert.equal(flagged.get("01-intro"), "ordinal-file-name", "folders are checked once");
+  for (const fine of ["pricing-rules.md", "2026-10-16-churn-analysis.md", "postgres-15.md", "tiers.md", "README.md", "overview.md", "2026-10-16-Some_Plan.md"]) {
+    assert.ok(!flagged.has(fine), `${fine} must not be flagged`);
+  }
+}
+
+function auditJson(root) {
+  const result = spawnSync("node", [
+    path.join(repoRoot, "skills/docdriven-audit/scripts/audit-docdriven.mjs"),
+    "--root",
+    root,
+    "--format",
+    "json"
+  ], { cwd: repoRoot, encoding: "utf8" });
+  return JSON.parse(result.stdout).findings;
 }
 
 function testCheckFrontmatter() {

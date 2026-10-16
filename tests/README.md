@@ -20,6 +20,7 @@ Validation targets:
 - generated architecture docs include reuse and composition rules
 - audits warn on weak architecture contracts and missing structure/configuration/reuse documentation
 - audit reports missing files, oversized docs, and invalid route tables
+- audit flags heading numbers left over from a split, positional references, and bad file or folder names
 - skills can be listed or installed by `npx skills`
 - vendored `skills/<skill>/_shared/` copies match `skills/_shared/`
 - each skill resolves its references and runs when installed on its own

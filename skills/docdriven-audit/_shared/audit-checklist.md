@@ -51,6 +51,13 @@
   router 250 words; knowledge 1500-3000 review band; over 3000 split by default)
 - Oversized knowledge docs have split-required or split-review-required findings
 - Split plans in `tmp/splits/` are executed or deleted, not left as truth
+- File and folder names are lowercase ASCII kebab-case, carry no order prefix or
+  revision suffix, and are not vague (`invalid-file-name`, `ordinal-file-name`,
+  `vague-file-name`)
+- H2 headings are not numbered; a numbered sequence starts at 1 without gaps and
+  only appears in procedure docs (`heading-numbering`, `numbered-headings`)
+- No positional references ("point 7", "§4") in knowledge or human docs
+  (`positional-reference`)
 - Generated placeholder text is not left as completed docs
 - `tmp/` content is not treated as truth
 - Validation commands match executable project files
