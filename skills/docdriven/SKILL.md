@@ -112,7 +112,45 @@ change, propagate through the knowledge graph before claiming the work complete.
 - If no route matches, update the route graph or record the gap.
 - Missing documentation is part of the task.
 
+## Capture Decisions And Corrections
+
+A rule, decision, or correction the user states in chat is project truth as soon
+as it applies beyond this turn. Record it without being asked.
+
+1. When the user states a rule, decision, or process change, or points out a
+   mistake in a flow, write it to its canonical owner in the same task. For a
+   mistake, fix the flow or skill that allowed it, not only the output.
+2. Use the project's own home: the flow doc, the owning knowledge doc, or
+   `AGENTS.md` for working rules. Prefer repo files over private agent memory so
+   the user and every agent can read the rule.
+3. Mark its status: decided, provisional (name the open question and who
+   decides), or time-limited (name the date to revisit).
+4. Name the file and section in the final reply. If you recorded nothing, say
+   why.
+5. Do not record a one-off instruction for the current task ("only October
+   tickets this run"). Do not leave findings or working data in `/tmp` or only
+   in the session; put them where the project keeps such material.
+
+## Analysis Findings
+
+Findings from an analysis or investigation do not get a new document by default.
+
+1. Find the owner of the topic through the route and `knowledge-index.json`.
+   Update the owner first and link run artifacts (scripts, extracts, data
+   files) from there as evidence.
+2. Write a dated report only for a bounded result that people will cite on its
+   own. Look for an earlier report on the same subject first and extend or
+   merge it instead of adding a sibling.
+3. A report holds the question, the answer, and the evidence. It references
+   canonical IDs instead of restating them.
+4. `Docs/agent/gaps.md` lists open uncertainty. Remove items once they are
+   resolved or moved into their owner. Do not use it as a changelog.
+
 ## Completion Evidence
+
+Give this evidence in your final reply to the user. Do not write it into docs.
+No route, owner-read, or validation trailers, and no session logs. Docs hold
+current truth and the sources for it, not a record of how the agent worked.
 
 When finishing DocDriven work, report:
 
