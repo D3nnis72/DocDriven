@@ -58,6 +58,7 @@ Rules:
 - **Stop condition.** If verifying a parent/dependent confirms it is still accurate (includes list correct, summary unchanged), update only its `sourceVersion` and stop propagating further upward. Only continue upward if the parent's content actually changed.
 - Flag, don't guess. If uncertain, write to `Docs/agent/gaps.md` rather than making a potentially wrong edit.
 - Use `changeSignals` as a heuristic: if the diff semantically matches a route's change signals, review that route's knowledge IDs even if no doc was directly touched.
+- Status carriers outside the graph count too. Canvases, specs, plans, roadmaps and tmp notes can still call the changed thing open, later or missing. Search them by the words of the changed concept and update or trim them in the same task. A user who asks "is it in the canvas too?" found one you skipped.
 
 ## Dynamic Structure
 
@@ -115,6 +116,7 @@ change, propagate through the knowledge graph before claiming the work complete.
 - If truth cannot be verified, record uncertainty in `Docs/agent/gaps.md`.
 - If no route matches, update the route graph or record the gap.
 - Missing documentation is part of the task.
+- Before you report a gap, a limitation or a new requirement, search the canonical docs and canvases for an existing decision on it and cite it. A limitation the docs call intended is not a gap. A term from a canvas enters a canonical doc only after it matches the glossary, the code and the UI names.
 
 ## Capture Decisions And Corrections
 
