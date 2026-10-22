@@ -244,6 +244,9 @@ function testAuditFlagsFileNames() {
   fs.writeFileSync(path.join(dir, "README.md"), body);
   fs.writeFileSync(path.join(root, "Docs/knowledge/features/01-intro/overview.md"), body);
   fs.writeFileSync(path.join(root, "Docs/tmp/splits/2026-10-16-Some_Plan.md"), body);
+  fs.mkdirSync(path.join(root, "Docs/playbook/canvases/kpi-validation"), { recursive: true });
+  fs.writeFileSync(path.join(root, "Docs/playbook/canvases/kpi-validation/00_overview.md"), body);
+  fs.writeFileSync(path.join(root, "Docs/playbook/canvases/kpi-validation/01_data_completeness.md"), body);
 
   const findings = auditJson(root);
   const flagged = new Map(findings.filter((f) => /file-name$/.test(f.code)).map((f) => [path.basename(f.file), f.code]));
@@ -254,7 +257,7 @@ function testAuditFlagsFileNames() {
   assert.equal(flagged.get("tiers-2.md"), "ordinal-file-name");
   assert.equal(flagged.get("notes.md"), "vague-file-name");
   assert.equal(flagged.get("01-intro"), "ordinal-file-name", "folders are checked once");
-  for (const fine of ["pricing-rules.md", "2026-10-16-churn-analysis.md", "postgres-15.md", "tiers.md", "README.md", "overview.md", "2026-10-16-Some_Plan.md"]) {
+  for (const fine of ["pricing-rules.md", "2026-10-16-churn-analysis.md", "postgres-15.md", "tiers.md", "README.md", "overview.md", "2026-10-16-Some_Plan.md", "00_overview.md", "01_data_completeness.md"]) {
     assert.ok(!flagged.has(fine), `${fine} must not be flagged`);
   }
 }

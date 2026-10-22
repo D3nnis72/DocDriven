@@ -137,6 +137,22 @@ as it applies beyond this turn. Record it without being asked.
    tickets this run"). Do not leave findings or working data in `/tmp` or only
    in the session; put them where the project keeps such material.
 
+## Keep Status Docs Readable
+
+A canvas, roadmap, status summary, or flow doc that several sessions update turns
+into a log, and the user can no longer see what is open.
+
+1. When you update one, rewrite the whole document, not only the changed line.
+   Open items, their next step, and the owner come first, grouped by topic.
+   Finished work shrinks to one line or moves to its canonical doc.
+2. The first screen answers: what is open, what is next, where do I look. If it
+   does not, restructure before you add anything.
+3. When several canvases or plans cover one subject, give them one overview that
+   says which file owns what, or one folder that opens with the overview. Do not
+   add another sibling.
+4. A human overview or README starts with what it is and the command or entry
+   point to start. Short paragraphs, not blocks of bullets nobody reads.
+
 ## Analysis Findings
 
 Findings from an analysis or investigation do not get a new document by default.

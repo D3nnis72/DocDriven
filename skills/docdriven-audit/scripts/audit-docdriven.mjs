@@ -428,7 +428,7 @@ function checkFileNames() {
   const reportedDirs = new Set();
   for (const file of markdownFiles(docs)) {
     const relative = path.relative(docs, file).split(path.sep).join("/");
-    if (relative.startsWith("tmp/")) continue;
+    if (relative.startsWith("tmp/") || relative.startsWith("playbook/")) continue;
     const segments = relative.split("/");
     const fileName = segments.pop();
 

@@ -41,7 +41,8 @@ is opened.
   Reading order lives in the overview doc.
 - Inside a package folder, do not repeat the folder name as a prefix
   (`pricing/rules.md`, not `pricing/pricing-rules.md`).
-- No vague names (`misc`, `notes`, `details`, `other`) outside `tmp/`.
+- No vague names (`misc`, `notes`, `details`, `other`) outside `tmp/` and `playbook/`.
+- `playbook/` holds temporary Playbook artifacts and uses its own naming (`canvases/<topic>.md` or `canvases/<topic>/00_overview.md`, `01_<slice>.md`).
 - One language for file names and IDs per project. Record the choice in
   `Docs/agent/naming.md` when it is not English.
 - A date in the name is for bounded reports only
