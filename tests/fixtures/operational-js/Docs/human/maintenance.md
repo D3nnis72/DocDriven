@@ -1,5 +1,5 @@
 ---
-id: human.operations.maintenance
+id: human.maintenance
 type: view
 derivedFrom:
   - operations.general

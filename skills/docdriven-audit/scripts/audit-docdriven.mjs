@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { scanProject } from "../_shared/operational-scan.mjs";
+import { inferProjectType, scanProject } from "../_shared/operational-scan.mjs";
 
 const args = process.argv.slice(2);
 const root = valueAfter("--root") || process.cwd();
@@ -10,18 +10,22 @@ const docsRoot = valueAfter("--docs-root") || "Docs";
 const docs = path.join(root, docsRoot);
 const project = scanProject(root);
 
-const requiredFiles = [
+const workspaceRequiredFiles = [
   "README.md",
+  "agent/context-map.md",
+  "agent/gaps.md",
+  "agent/knowledge-index.json"
+];
+
+const appRequiredFiles = [
+  ...workspaceRequiredFiles,
   "human/overview.md",
   "human/setup.md",
   "human/commands.md",
   "human/architecture.md",
-  "agent/context-map.md",
   "agent/validation.md",
   "agent/writing-style.md",
   "agent/naming.md",
-  "agent/gaps.md",
-  "agent/knowledge-index.json",
   "knowledge/README.md",
   "knowledge/architecture/README.md",
   "knowledge/features/README.md",
@@ -29,6 +33,14 @@ const requiredFiles = [
   "knowledge/operations/README.md",
   "tmp/README.md"
 ];
+
+const manifestSettings = readManifestSettings();
+const projectType = manifestSettings.projectType || inferProjectType(project);
+const requiredFiles = manifestSettings.requiredDocs || (projectType === "app" ? appRequiredFiles : workspaceRequiredFiles);
+
+const canvasMaxWords = 1500;
+const leafLimit = 6;
+const sizeExceptionCeiling = 6000;
 
 const requiredColumns = [
   "Task type",
@@ -48,6 +60,12 @@ const sizeTargets = [
 
 const vagueNames = new Set(["misc", "notes", "details", "other", "stuff", "scratch", "untitled"]);
 const leftoverNameTokens = new Set(["copy", "final", "old", "backup", "draft"]);
+const genericNames = new Set([
+  "analysis", "cases", "config", "configuration", "data", "files", "findings", "flow", "general",
+  "history", "info", "invoice", "invoices", "linking", "model", "models", "overview", "pipeline",
+  "pricing", "process", "project", "quality", "requirements", "results", "rules", "scope", "sources",
+  "status", "summary", "terms", "types"
+]);
 
 const findings = [];
 
@@ -56,14 +74,17 @@ const routeGraph = checkManifest();
 checkContextMap();
 checkSizes();
 checkFileNames();
+checkKnowledgeNames();
+checkKnowledgeFolders();
 checkHeadings();
 checkTmp();
+checkCanvases();
 checkOwnedCodeMarkers();
 if (routeGraph) {
   checkRouteGraph(routeGraph);
   checkContextMapRouteIds(routeGraph);
   checkOrphanKnowledgeDocs(routeGraph);
-  checkAdaptiveHumanDocs(routeGraph);
+  if (projectType === "app") checkAdaptiveHumanDocs(routeGraph);
 }
 checkPlaceholders();
 checkArchitectureContract();
@@ -81,6 +102,18 @@ function valueAfter(flag) {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
+function readManifestSettings() {
+  try {
+    const manifest = readJson(path.join(docs, "agent", "manifest.json"));
+    return {
+      projectType: typeof manifest.projectType === "string" ? manifest.projectType : undefined,
+      requiredDocs: Array.isArray(manifest.requiredDocs) ? manifest.requiredDocs : undefined
+    };
+  } catch {
+    return {};
+  }
+}
+
 function checkRequiredFiles() {
   for (const relative of requiredFiles) {
     const file = path.join(docs, relative);
@@ -89,7 +122,7 @@ function checkRequiredFiles() {
         severity: "error",
         code: "missing-required-file",
         file: path.relative(root, file),
-        message: "Required DocDriven file is missing."
+        message: `Required DocDriven file is missing for projectType ${projectType}${manifestSettings.requiredDocs ? " (manifest requiredDocs)" : ""}.`
       });
     }
   }
@@ -369,6 +402,23 @@ function extractH2Sections(content) {
 
 function oversizedKnowledgeFinding({ relative, words, maxWords, content }) {
   const h2Sections = extractH2Sections(content);
+  const frontmatter = parseFrontmatter(content) || {};
+  const revisit = arrayValue(frontmatter.revisitWhen).filter(Boolean);
+  if (words > 3000 && frontmatter.sizeException && revisit.length > 0) {
+    const overCeiling = words > sizeExceptionCeiling;
+    return {
+      severity: overCeiling ? "error" : "warning",
+      code: overCeiling ? "size-exception-over-ceiling" : "size-exception",
+      file: relative,
+      words,
+      maxWords: sizeExceptionCeiling,
+      suggestedAction: overCeiling ? "split-required" : "revisit",
+      h2Sections,
+      message: overCeiling
+        ? `Size exception (${frontmatter.sizeException}) has ${words} words; the ceiling is ${sizeExceptionCeiling}. Split it by date, question, period, or source.`
+        : `Kept size exception (${frontmatter.sizeException}, ${words} words). Revisit when: ${revisit.join("; ")}.`
+    };
+  }
   const severity = words > 3000 ? "error" : "warning";
   const suggestedAction = words > 3000 ? "split-required" : "split-review-required";
   const band =
@@ -397,6 +447,7 @@ function checkSizes() {
   for (const file of markdownFiles(docs)) {
     const relative = path.relative(root, file);
     const normalized = relative.split(path.sep).join("/");
+    if (isCanvas(file)) continue;
     const content = fs.readFileSync(file, "utf8");
     const words = countWords(content);
     const target = sizeTargets.find((entry) => entry.pattern.test(`/${normalized}`));
@@ -477,6 +528,168 @@ function nameProblem(base, siblings) {
     return { code: "vague-file-name", reason: "is a vague name. Name docs after stable concepts, features, interfaces, or operations." };
   }
   return null;
+}
+
+function checkKnowledgeNames() {
+  const byName = new Map();
+  for (const file of markdownFiles(path.join(docs, "knowledge"))) {
+    const name = path.basename(file);
+    if (name === "README.md") continue;
+    const base = name.slice(0, -3);
+    if (!byName.has(name)) byName.set(name, []);
+    byName.get(name).push(path.relative(root, file));
+    if (genericNames.has(base)) {
+      findings.push({
+        severity: "warning",
+        code: "generic-file-name",
+        file: path.relative(root, file),
+        message: `"${name}" is a generic word on its own. Name the subject plus the aspect, specific without its folder (for example invoice-extraction-quality.md, not invoices.md).`
+      });
+    }
+  }
+  for (const [name, files] of byName) {
+    if (files.length < 2) continue;
+    findings.push({
+      severity: "warning",
+      code: "duplicate-file-name",
+      file: files[0],
+      message: `"${name}" exists ${files.length} times: ${files.join(", ")}. A name must not be confusable with another file in the tree.`
+    });
+  }
+}
+
+function checkKnowledgeFolders() {
+  for (const dir of directories(path.join(docs, "knowledge"))) {
+    const leaves = fs.readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md")
+      .map((entry) => entry.name);
+    if (leaves.length < leafLimit) continue;
+    findings.push({
+      severity: "warning",
+      code: "crowded-knowledge-folder",
+      file: path.relative(root, dir),
+      count: leaves.length,
+      message: `Knowledge folder holds ${leaves.length} leaf docs (limit ${leafLimit - 1}). Group related leaves into subfolders with README.md overviews: ${leaves.join(", ")}.`
+    });
+  }
+}
+
+function checkCanvases() {
+  const canvasRoot = path.join(docs, "playbook", "canvases");
+  if (!fs.existsSync(canvasRoot)) return;
+  const knowledgeNumbers = markdownFiles(path.join(docs, "knowledge"))
+    .map((file) => ({ file, numbers: distinctiveNumbers(fs.readFileSync(file, "utf8")) }));
+
+  for (const entry of fs.readdirSync(canvasRoot, { withFileTypes: true })) {
+    const absolute = path.join(canvasRoot, entry.name);
+    if (entry.isDirectory()) checkCanvasFolder(absolute, knowledgeNumbers);
+    else if (entry.name.endsWith(".md")) checkCanvasFile(absolute, knowledgeNumbers);
+  }
+}
+
+function checkCanvasFolder(dir, knowledgeNumbers) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  if (!entries.some((entry) => entry.isFile() && entry.name === "00_overview.md")) {
+    findings.push({
+      severity: "warning",
+      code: "canvas-folder-missing-overview",
+      file: path.relative(root, dir),
+      message: "Canvas folder has no 00_overview.md. A canvas folder opens with 00_overview.md, followed by numbered work steps."
+    });
+  }
+  for (const entry of entries) {
+    const absolute = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (/^\d{2}_[a-z0-9]+(?:_[a-z0-9]+)*$/.test(entry.name)) checkCanvasFolder(absolute, knowledgeNumbers);
+      else reportUnnumberedCanvasEntry(absolute, entry.name);
+      continue;
+    }
+    if (!entry.name.endsWith(".md")) continue;
+    if (entry.name !== "00_overview.md" && !/^\d{2}_[a-z0-9]+(?:_[a-z0-9]+)*\.md$/.test(entry.name)) {
+      reportUnnumberedCanvasEntry(absolute, entry.name);
+    }
+    checkCanvasFile(absolute, knowledgeNumbers);
+  }
+}
+
+function reportUnnumberedCanvasEntry(absolute, name) {
+  const hint = name === "README.md"
+    ? "Rename it to 00_overview.md."
+    : "Ask whether it can be finished. A work step becomes NN_<step>.md; a topic or chapter that never ends belongs to its knowledge owner, and the overview links it.";
+  findings.push({
+    severity: "warning",
+    code: "canvas-unnumbered-file",
+    file: path.relative(root, absolute),
+    message: `"${name}" is not a numbered work step. ${hint}`
+  });
+}
+
+function checkCanvasFile(file, knowledgeNumbers) {
+  const relative = path.relative(root, file);
+  const content = fs.readFileSync(file, "utf8");
+  const head = content.replace(/^---[\s\S]*?---/, "").split(/\r?\n/).slice(0, 40).join("\n");
+  if (!/^\s*>?\s*\*\*Status(?::\*\*|\*\*\s*:)/m.test(head)) {
+    findings.push({
+      severity: "warning",
+      code: "canvas-missing-status",
+      file: relative,
+      message: "Canvas has no status header (> **Status:** ...). Every canvas file starts with one."
+    });
+  }
+
+  const words = countWords(content);
+  if (words > canvasMaxWords) {
+    findings.push({
+      severity: "warning",
+      code: "oversized-canvas",
+      file: relative,
+      words,
+      maxWords: canvasMaxWords,
+      message: `Canvas has ${words} words; the limit is ${canvasMaxWords}. Split it into work steps, or move settled rules to their knowledge owner and link them.`
+    });
+  }
+
+  const numbers = distinctiveNumbers(content);
+  if (numbers.size === 0) return;
+  let best = null;
+  for (const doc of knowledgeNumbers) {
+    const shared = [...numbers].filter((value) => doc.numbers.has(value)).length;
+    if (!best || shared > best.shared) best = { file: doc.file, shared };
+  }
+  if (best && best.shared >= 10 && best.shared / numbers.size >= 0.4) {
+    findings.push({
+      severity: "warning",
+      code: "canvas-shares-numbers",
+      file: relative,
+      shared: best.shared,
+      total: numbers.size,
+      source: path.relative(root, best.file),
+      message: `Canvas shares ${best.shared} of its ${numbers.size} numbers with ${path.relative(root, best.file)}. Numbers belong to the finding; link it instead of copying.`
+    });
+  }
+}
+
+function isCanvas(file) {
+  const relative = path.relative(docs, file).split(path.sep).join("/");
+  return relative.startsWith("playbook/canvases/");
+}
+
+// Numbers with three or more digits, without years: short numbers like days or
+// small counts appear in almost every doc and would make every canvas "shared".
+function distinctiveNumbers(content) {
+  const text = content
+    .replace(/^---[\s\S]*?---/, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\]\([^)]*\)/g, "]")
+    .replace(/`[^`]*`/g, " ");
+  const numbers = new Set();
+  for (const match of text.matchAll(/(?<![\w.,\/-])\d[\d.,]*\d/g)) {
+    const value = match[0].replace(/[.,]$/, "");
+    if (value.replace(/[.,]/g, "").length < 3) continue;
+    if (/^(19|20)\d\d$/.test(value)) continue;
+    numbers.add(value);
+  }
+  return numbers;
 }
 
 function checkHeadings() {
@@ -797,6 +1010,15 @@ function markdownFiles(dir) {
     const absolute = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...markdownFiles(absolute));
     if (entry.isFile() && entry.name.endsWith(".md")) out.push(absolute);
+  }
+  return out;
+}
+
+function directories(dir) {
+  if (!fs.existsSync(dir)) return [];
+  const out = [dir];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) out.push(...directories(path.join(dir, entry.name)));
   }
   return out;
 }

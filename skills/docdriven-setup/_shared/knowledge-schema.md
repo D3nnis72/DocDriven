@@ -7,8 +7,11 @@ identity, type, authority, and relationships.
 
 | Field | Required | Values | Purpose |
 |---|---|---|---|
-| `id` | yes | `dot.separated.name` | Stable identity that survives renames |
+| `id` | yes | `dot.separated.path` | Identity that mirrors the doc's path (see ID Naming Convention) |
 | `type` | yes | `architecture`, `rule`, `decision`, `summary`, `procedure`, `overview`, `view` | What kind of knowledge this is. `overview` docs serve as navigation hubs for both humans and agents. |
+| `status` | `decision` docs | `decided`, `provisional`, `deferred` | State of the decision (see Decision Docs) |
+| `revisitWhen` | deferred decisions, size exceptions | list of observable triggers | When to take the decision or the exception up again |
+| `sizeException` | no | `brainstorm`, `research snapshot`, `ledger`, `historical reference` | Kept over 3,000 words (see `doc-splitting.md`) |
 | `scope` | no | free text | Domain this belongs to |
 | `authority` | canonical docs only | `canonical` | Marks this as the single owner of a concept |
 | `sourceVersion` | recommended | short commit hash (7 chars) | The code/doc state this was last verified against |
@@ -21,34 +24,71 @@ identity, type, authority, and relationships.
 
 ## ID Naming Convention
 
-- Canonical knowledge: `{scope}.{concept}` — e.g., `frontend.architecture`, `auth.flow`
-- Specializations: `{scope}.{concept}.{sub}` — e.g., `frontend.architecture.testing`
-- Views: `{surface}.{scope}.{concept}` — e.g., `human.frontend.overview`
+The ID is the doc's path, with `/` as `.` and without `.md`. Knowledge docs drop
+the `knowledge/` prefix; views keep their surface:
 
-IDs must be unique across the entire docs tree.
+- `knowledge/payments/checkout-flow.md` → `payments.checkout-flow`
+- `knowledge/payments/README.md` → `payments` (an overview carries its folder's ID)
+- `human/frontend-overview.md` → `human.frontend-overview`
+
+Segments keep the hyphens of the file and folder names. Never drop or replace
+them (`findings/invoice-extraction-quality.md` →
+`findings.invoice-extraction-quality`, not `findings.invoiceextractionquality`).
+The setup scaffold's `knowledge.index` and `<area>.general` IDs for top-level
+`README.md` files are the only accepted deviation.
+
+IDs must be unique across the entire docs tree. Stable item numbers inside docs
+(requirements, decisions, questions such as `R3`, `E59`, `Q12`) are not doc IDs.
+They never change when a doc moves.
+
+## Renaming and Moving Docs
+
+The ID follows the path, so a move changes the ID. Do it in one pass:
+
+1. Move the file or folder. Set the new ID on every moved doc, children included.
+2. Update `knowledge-index.json`, the route shards' `knowledge` arrays, and
+   `Docs/agent/context-map.md`.
+3. Update `includes`, `extends`, `dependsOn`, and `derivedFrom` everywhere.
+4. Replace every remaining reference: `rg -n "<old-id>|<old/path>"` over the
+   whole repo (docs, `AGENTS.md`, skills, scripts, playbook). Zero hits left.
+5. External references (Notion, tickets, chat) cannot be grepped. Add the pair
+   to the `Renamed` table in `Docs/agent/naming.md` (`old id | old path | new id |
+   new path | date`) and update the external pages you can reach. No stub files.
+6. Run `check-frontmatter`, `check-graph`, and the audit.
 
 ## File Naming
 
 A name is part of routing. It tells an agent what a doc answers before the file
 is opened.
 
-- Lowercase ASCII kebab-case for files and folders (`pricing-rules.md`).
+- Lowercase ASCII kebab-case for files and folders (`discount-rules.md`).
   `README.md` is the only exception.
-- The file name matches the last segment of the ID (`features.pricing.rules` →
-  `rules.md`). A `README.md` overview keeps the ID of the doc it replaced.
+- The file name is the last ID segment (`features.pricing.discount-rules` →
+  `discount-rules.md`).
+- **A name is specific without its folder.** It names the subject and the
+  aspect, usually two to four words: `invoice-pdf-contents.md`,
+  `invoice-extraction.md`, `invoice-extraction-quality.md`,
+  `record-linking-keys.md`, `baseline-and-savings.md`.
+- A generic word never stands alone: `invoices`, `data`, `rules`, `pipeline`,
+  `scope`, `pricing`, `analysis`, `files`, `sources`. Add what about it is meant.
+- Test: would someone without project knowledge know what is inside, and could
+  they confuse the file with no other file in the tree? `invoices.md` fails:
+  delivery, extraction, or extraction quality? Two files with the same name in
+  different folders fail too.
+- Specific beats short. Inside a package folder, add the aspect instead of a
+  bare word (`pricing/discount-rules.md`, not `pricing/rules.md`). Keep the
+  folder's subject in the name when the name would be generic without it
+  (`enrichment/enrichment-run.md`, not `enrichment/run.md`), but never as a
+  mere prefix to an already specific name (not `pricing/pricing-discount-rules.md`).
 - Name after the concern the doc answers, never after its position or origin.
   No order prefixes (`01-`, `07-`), no `part-2`, `-2`, `-final`, `-old`, `-copy`.
   Reading order lives in the overview doc.
-- Inside a package folder, do not repeat the folder name as a prefix
-  (`pricing/rules.md`, not `pricing/pricing-rules.md`).
 - No vague names (`misc`, `notes`, `details`, `other`) outside `tmp/` and `playbook/`.
-- `playbook/` holds temporary Playbook artifacts and uses its own naming (`canvases/<topic>.md` or `canvases/<topic>/00_overview.md`, `01_<slice>.md`).
+- `playbook/` holds temporary Playbook artifacts and uses its own naming (`canvases/<topic>.md` or `canvases/<topic>/00_overview.md`, `01_<step>.md`).
 - One language for file names and IDs per project. Record the choice in
   `Docs/agent/naming.md` when it is not English.
 - A date in the name is for bounded reports only
   (`2026-10-16-churn-analysis.md`), never for living docs.
-- Renaming a file keeps the ID. Update `knowledge-index.json` and grep the old
-  path.
 
 ## Relationship Types
 
@@ -132,6 +172,34 @@ Plain strings and objects can be mixed in the same list.
   its content. A single orienting sentence is acceptable; anything more is
   duplication and violates single-source-of-truth.
 - Update the canonical source first, then propagate to dependents and views.
+
+## Decision Docs
+
+A rule or decision lives with its subject owner: inside the owning doc, or as a
+`type: decision` doc in the owner's folder when it needs its own reasoning.
+
+- `status: decided | provisional | deferred`. A provisional decision names the
+  open question and who decides.
+- The body states the decision, the reason, and what it rules out.
+- A deferred decision also carries `revisitWhen` and keeps the draft that was
+  not built below the decision, so the design survives without a canvas. The
+  draft follows the normal size rules: keep what a restart needs, drop dated
+  detail (prices, deployment state, run logs), and split it into leaves that
+  `extend` the decision if it still exceeds 3,000 words.
+- A decision ledger elsewhere (for example `playbook/decisions.md`) holds only
+  history and reasoning and links the owner. It is never canonical.
+
+```yaml
+---
+id: enrichment.classification-design
+type: decision
+authority: canonical
+status: deferred
+revisitWhen:
+  - deterministic enrichment leaves more than 20% of lines in review
+extends: enrichment
+---
+```
 
 ## Canonical Knowledge Example
 
@@ -239,7 +307,7 @@ children rather than loading everything. Rules:
 
 ```yaml
 ---
-id: human.frontend.overview
+id: human.frontend-overview
 type: view
 scope: frontend
 sourceVersion: a3f92b1
@@ -292,12 +360,13 @@ Route fields:
 {
   "frontend.architecture": "knowledge/frontend/architecture.md",
   "frontend.testing": "knowledge/frontend/testing.md",
-  "human.frontend.overview": "human/frontend.md"
+  "human.frontend-overview": "human/frontend-overview.md"
 }
 ```
 
 Convention-based resolution (`{scope}.{concept}` → `knowledge/{scope}/{concept}.md`)
-is the default. The index is the authority when convention does not hold.
+is the default. The index mirrors the paths; an entry that disagrees with the
+path is a rename that was not finished.
 
 ## Propagation Order
 

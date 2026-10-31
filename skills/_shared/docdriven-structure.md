@@ -40,7 +40,8 @@ Key rules:
 - Derived views (`type: view`) never establish truth independently.
 - Relationships (`extends`, `includes`, `dependsOn`, `derivedFrom`) form the
   dependency graph that drives propagation after changes.
-- IDs are stable identities that survive file renames and restructuring.
+- IDs mirror the path. A move renames the ID through the rename procedure in
+  the knowledge-schema reference.
 - When another knowledge ID owns a concept, reference it by ID. Do not restate
   its content. A single orienting sentence is acceptable.
 
@@ -177,13 +178,25 @@ project evidence and reader needs:
 
 ## Hierarchy Growth
 
-When a knowledge folder accumulates 6+ leaf docs at the same level, group
-related docs into a subfolder and create an overview doc for that subfolder.
-This creates the navigable hierarchy that enables progressive routing.
+A knowledge folder holds at most five leaf docs next to its `README.md`. At six,
+group related leaves into subfolders, each with a `README.md` overview. This
+creates the navigable hierarchy that enables progressive routing. The audit
+reports `crowded-knowledge-folder`.
 
-**When to promote:** During propagation or when creating a new knowledge doc, if
-the target folder has 6+ siblings, consider whether a group shares a concern
-that deserves its own subfolder + overview.
+**When to check:** whenever you create or move a knowledge doc, check the target
+folder. Grouping is part of the same task, not a later cleanup.
+
+**Structure pass:** when the project changes direction (new goal or deliverable,
+a replaced approach or pipeline, a re-cut scope), check every knowledge folder,
+not only the docs in the diff:
+
+- folders with six or more leaves
+- docs over 3,000 words and size exceptions past their `revisitWhen`
+- names that no longer answer the current question
+- canvases whose steps are no longer the work being done
+
+Fix the findings with the rename procedure, or record them in
+`Docs/agent/gaps.md` with the reason they wait.
 
 **Common knowledge categories** (use as inspiration, not a fixed taxonomy):
 
@@ -228,3 +241,12 @@ When a single knowledge file mixes routing concerns, split immediately. When it
 exceeds 3,000 words, split by default (subfolder when 3+ leaves belong
 together). The 1,500-3,000 word band needs review, not automatic splitting.
 See `doc-splitting.md`.
+
+## Canvases
+
+`playbook/canvases/` holds temporary brainstorm canvases. They track open work
+steps and link their owners. Rules and decisions go to the knowledge owner as
+soon as they are settled, numbers and measurements stay in the finding that
+produced them. A canvas is not a derived view: no `type: view`, no
+`derivedFrom`, no ID. It names its owners as links in the text. Folder shape
+and how a step ends: Playbook `brainstorming`.

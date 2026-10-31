@@ -9,7 +9,7 @@ const format = valueAfter("--format") || "text";
 const docs = path.join(root, docsRoot);
 
 const validTypes = ["architecture", "rule", "decision", "summary", "procedure", "overview", "view"];
-const idPattern = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$/;
+const idPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 const shortHashPattern = /^[0-9a-f]{7,}$/;
 const findings = [];
 const seenIds = new Map();
@@ -47,7 +47,10 @@ function checkKnowledgeDocs() {
     } else {
       checkIdFormat(frontmatter.id, relative);
       checkIdUnique(frontmatter.id, relative);
+      checkIdMatchesPath(frontmatter.id, file, relative);
     }
+
+    checkRevisitTrigger(frontmatter, relative);
 
     if (!frontmatter.type) {
       findings.push({ severity: "error", code: "missing-type", file: relative, message: "Frontmatter is missing required field: type." });
@@ -102,6 +105,7 @@ function checkViewDocs() {
       } else {
         checkIdFormat(frontmatter.id, relative);
         checkIdUnique(frontmatter.id, relative);
+        if (dir === "human") checkIdMatchesPath(frontmatter.id, file, relative);
       }
 
       if (!frontmatter.type) {
@@ -162,7 +166,34 @@ function checkKnowledgeIndex() {
 
 function checkIdFormat(id, file) {
   if (!idPattern.test(id)) {
-    findings.push({ severity: "warning", code: "invalid-id-format", file, message: `ID "${id}" does not match dot.separated.lowercase pattern.` });
+    findings.push({ severity: "warning", code: "invalid-id-format", file, message: `ID "${id}" does not match the dot.separated.path pattern with kebab-case segments.` });
+  }
+}
+
+function checkIdMatchesPath(id, file, relative) {
+  const parts = path.relative(docs, file).split(path.sep);
+  if (parts[0] === "knowledge") parts.shift();
+  const last = parts.pop().replace(/\.md$/, "");
+  if (last !== "README") parts.push(last);
+  const expected = parts.join(".");
+  const scaffold = (parts.length === 0 && id === "knowledge.index") || (parts.length === 1 && last === "README" && id === `${parts[0]}.general`);
+  if (id === expected || scaffold) return;
+  findings.push({
+    severity: "warning",
+    code: "id-path-mismatch",
+    file: relative,
+    message: `ID ${id} does not mirror its path; expected ${expected || "(knowledge root)"}. Finish the rename with the procedure in knowledge-schema.md.`
+  });
+}
+
+function checkRevisitTrigger(frontmatter, file) {
+  const hasTrigger = Array.isArray(frontmatter.revisitWhen) ? frontmatter.revisitWhen.length > 0 : Boolean(frontmatter.revisitWhen);
+  if (hasTrigger) return;
+  if (frontmatter.type === "decision" && frontmatter.status === "deferred") {
+    findings.push({ severity: "warning", code: "deferred-decision-missing-revisit", file, message: "Deferred decision has no revisitWhen trigger. Name the event that brings it back." });
+  }
+  if (frontmatter.sizeException) {
+    findings.push({ severity: "warning", code: "size-exception-missing-revisit", file, message: "sizeException without revisitWhen is not an exception. Name the event that ends it." });
   }
 }
 

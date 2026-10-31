@@ -8,10 +8,10 @@
   "human.setup": "human/setup.md",
   "human.commands": "human/commands.md",
   "human.architecture": "human/architecture.md",
-  "human.operations.environment": "human/environment.md",
-  "human.operations.configuration": "human/configuration.md",
-  "human.operations.services": "human/services.md",
-  "human.operations.deployment": "human/deployment.md",
-  "human.operations.troubleshooting": "human/troubleshooting.md",
-  "human.operations.maintenance": "human/maintenance.md"
+  "human.environment": "human/environment.md",
+  "human.configuration": "human/configuration.md",
+  "human.services": "human/services.md",
+  "human.deployment": "human/deployment.md",
+  "human.troubleshooting": "human/troubleshooting.md",
+  "human.maintenance": "human/maintenance.md"
 }

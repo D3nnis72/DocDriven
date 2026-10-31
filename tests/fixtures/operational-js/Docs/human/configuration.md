@@ -1,5 +1,5 @@
 ---
-id: human.operations.configuration
+id: human.configuration
 type: view
 derivedFrom:
   - operations.general

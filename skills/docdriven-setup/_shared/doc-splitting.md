@@ -35,9 +35,20 @@ concerns:
 - historical reference dumps
 
 Example: a long acquisition brainstorm may stay unsplit. Mark the exception in
-the split plan or `gaps.md` when you keep it, and **narrow routing** so broad
-task routes do not load it by default. Normal UI or feature work should not pull
-an 8,000-word idea collection into context.
+its frontmatter (`sizeException: research snapshot` plus `revisitWhen`) and
+**narrow routing** so broad task routes do not load it by default. Normal UI or
+feature work should not pull an 8,000-word idea collection into context.
+
+Limits on every exception:
+
+- **Ceiling 6,000 words.** Past that, split even a cohesive artifact: a snapshot
+  by date or by question, a ledger by period or subject, a reference dump by
+  source. Nothing grows to 10,000 words as "one artifact".
+- **Revisit trigger.** `revisitWhen` names an observable event (next batch
+  delivered, decision taken, pilot finished). When it fires, split, archive the
+  snapshot as a dated report, or renew the exception with a new trigger.
+- An exception without `sizeException` and `revisitWhen` is not an exception.
+  The audit treats it as `split-required`.
 
 ## The deciding question
 
@@ -50,7 +61,7 @@ concern, change frequency, and `groundedIn` boundaries — not by H2 count alone
 |-----------|-----------|
 | 2–4 leaves, one feature package | Flat siblings in the parent folder |
 | 3+ leaves that belong together | Subfolder + `README.md` overview |
-| 6+ leaves at the same level | Group into a subfolder (Hierarchy Growth) |
+| 6+ leaves at the same level | Required: group into subfolders with `README.md` overviews (Hierarchy Growth) |
 | One leaf after split | Do not create a subfolder for a single child |
 
 A subfolder is a navigation hub. No hub needed → flat siblings are fine.
@@ -83,7 +94,7 @@ each file is under the word limit.
 
 | Signal | Fix |
 |--------|-----|
-| Prefix orphans outside the package folder (e.g. `document-design-*` next to `application-document-design/`) | Move into the package folder; rename ID to `parent.child` |
+| Prefix orphans outside the package folder (e.g. `document-design-*` next to `application-document-design/`) | Move into the package folder with the rename procedure in `knowledge-schema.md` |
 | Sibling references parent children via `dependsOn` instead of `extends` | Use `extends: parent` on the sibling; link related siblings in prose |
 | `dependsOn` between docs in the same package | Prefer `extends` + parent `includes`; siblings should not depend on each other for routing |
 | Circular `dependsOn` within a package | Break the cycle; use prose links or parent overview for cross-references |
@@ -127,7 +138,7 @@ exceptions in `Docs/agent/gaps.md`.
 
 **Heading fixes:** numbered headings removed, positional references replaced (list files)
 **Not splitting:** ...
-**Exception rationale:** ... (if keeping >3k words)
+**Exception rationale:** ... (if keeping >3k words; set `sizeException` and `revisitWhen`, ceiling 6,000)
 **Route narrowing:** ... (if exception — which routes should load this)
 **Siblings to update:** ...
 **Propagation:** knowledge-index, route shards, grep old path

@@ -10,7 +10,7 @@ graph.
 
 Documentation is a knowledge graph, not a folder of files.
 
-Every important doc has a stable identity that survives renames. Docs declare
+Every important doc has an identity that mirrors its path. Docs declare
 explicit relationships that form a dependency graph. Routes reference knowledge
 IDs instead of file paths. After a change, the agent traverses the graph to
 find everything that needs updating.
@@ -71,10 +71,11 @@ updateWhen:
 ---
 ```
 
-IDs are stable identities. If you rename `knowledge/frontend/architecture.md` to
-`knowledge/ui/arch.md`, the conceptual identity `frontend.architecture` survives.
-The knowledge index is updated, but every relationship pointing to that ID
-remains valid.
+An ID mirrors its path, so an agent can find a doc from its ID without an
+index lookup. Moving `knowledge/frontend/architecture.md` to
+`knowledge/ui/component-architecture.md` changes the ID to
+`ui.component-architecture`; the rename procedure in the knowledge schema
+updates the index, routes, relationships, and every reference in one pass.
 
 ### Relationship Types
 

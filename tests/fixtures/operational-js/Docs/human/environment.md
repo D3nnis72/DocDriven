@@ -1,5 +1,5 @@
 ---
-id: human.operations.environment
+id: human.environment
 type: view
 derivedFrom:
   - operations.general

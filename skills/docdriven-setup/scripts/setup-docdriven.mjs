@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { listDetectedSignals, scanProject } from "../_shared/operational-scan.mjs";
+import { inferProjectType, listDetectedSignals, scanProject } from "../_shared/operational-scan.mjs";
 
 const args = process.argv.slice(2);
 const root = valueAfter("--root") || process.cwd();
@@ -28,7 +28,7 @@ const viewIds = {
 };
 
 for (const doc of project.adaptiveHumanDocs) {
-  viewIds[`human.operations.${doc}`] = `human/${doc}.md`;
+  viewIds[`human.${doc}`] = `human/${doc}.md`;
 }
 
 // --- Generate Docs Tree ---
@@ -120,6 +120,7 @@ function manifest() {
   return `${JSON.stringify({
     schemaVersion: 2,
     docsRoot: "Docs",
+    projectType: inferProjectType(project),
     routeIndexes: [
       "agent/routes/architecture.json",
       "agent/routes/features.json",
@@ -396,7 +397,7 @@ function humanEnvironment(project) {
     : "| `unknown` | unknown | `confirm locally` | inspect manually | Confirm required environment variables. |";
 
   return `---
-id: human.operations.environment
+id: human.environment
 type: view
 derivedFrom:
   - operations.general
@@ -422,7 +423,7 @@ function humanConfiguration(project) {
     : "| `inspect manually` | Confirm project configuration files. |";
 
   return `---
-id: human.operations.configuration
+id: human.configuration
 type: view
 derivedFrom:
   - operations.general
@@ -445,7 +446,7 @@ function humanServices(project) {
     : "| inspect manually | inspect manually | Confirm required services. | Confirm health checks. |";
 
   return `---
-id: human.operations.services
+id: human.services
 type: view
 derivedFrom:
   - operations.general
@@ -468,7 +469,7 @@ function humanDeployment(project) {
     : "| inspect manually | inspect manually | `not detected` |";
 
   return `---
-id: human.operations.deployment
+id: human.deployment
 type: view
 derivedFrom:
   - operations.general
@@ -491,7 +492,7 @@ function humanTroubleshooting(project) {
     : "| Setup or runtime issue | `inspect manually` | generated gap |";
 
   return `---
-id: human.operations.troubleshooting
+id: human.troubleshooting
 type: view
 derivedFrom:
   - operations.general
@@ -514,7 +515,7 @@ function humanMaintenance(project) {
     : "| inspect manually | `not detected` | inspect manually |";
 
   return `---
-id: human.operations.maintenance
+id: human.maintenance
 type: view
 derivedFrom:
   - operations.general

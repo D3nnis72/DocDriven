@@ -79,6 +79,11 @@ Routes reference knowledge IDs. The agent resolves IDs to files via
 The generated tree is a base scaffold. Adapt it to the repository:
 
 - Classify the project: type, size, maturity, direction, risk profile.
+- Record the type in `manifest.json` as `projectType`: `app` for a codebase,
+  `workspace` for a docs, research, or analysis repository without an app.
+  The audit derives the required files from it. A workspace drops the app
+  scaffold (`human/setup.md`, `knowledge/architecture/` and the like) unless
+  readers need it; list deviations in `requiredDocs`.
 - Keep the smallest useful docs surface.
 - Remove docs for absent concepts.
 - Create project-specific docs when humans or agents have distinct tasks.

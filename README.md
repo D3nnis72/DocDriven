@@ -28,8 +28,9 @@ DocDriven exists to stop that.
 
 Markdown behaves like a lightweight knowledge graph.
 
-Every important doc has a stable identity (`id: frontend.architecture`) that
-survives renames and restructuring. Docs declare explicit relationships
+Every important doc has an identity that mirrors its path
+(`knowledge/frontend/architecture.md` → `id: frontend.architecture`). Moves
+follow one rename procedure. Docs declare explicit relationships
 (`extends`, `includes`, `dependsOn`, `derivedFrom`) that form a dependency graph.
 Routes reference knowledge IDs instead of file paths. After a change, the agent
 traverses the graph to find everything that needs updating.

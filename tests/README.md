@@ -21,6 +21,11 @@ Validation targets:
 - audits warn on weak architecture contracts and missing structure/configuration/reuse documentation
 - audit reports missing files, oversized docs, and invalid route tables
 - audit flags heading numbers left over from a split, positional references, and bad file or folder names
+- audit flags generic and duplicate knowledge file names and folders with six or more leaves
+- audit derives required files from `projectType` or `requiredDocs`, and a workspace without code needs no app scaffold
+- audit checks canvases: status header, word limit, `00_overview.md` plus numbered steps, numbers copied from knowledge
+- audit caps size exceptions at 6,000 words and ignores exceptions without `revisitWhen`
+- check-frontmatter flags IDs that do not mirror their path and deferred decisions without a revisit trigger
 - skills can be listed or installed by `npx skills`
 - vendored `skills/<skill>/_shared/` copies match `skills/_shared/`
 - each skill resolves its references and runs when installed on its own

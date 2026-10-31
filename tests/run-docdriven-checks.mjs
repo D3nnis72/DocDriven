@@ -13,7 +13,12 @@ testAuditFlagsWeakArchitectureDocs();
 testAuditFlagsUndocumentedReusePatterns();
 testAuditFlagsHeadingNumberingAfterSplit();
 testAuditFlagsFileNames();
+testAuditFlagsKnowledgeStructure();
+testAuditRequiredFilesFollowProjectType();
+testAuditChecksCanvases();
+testAuditSizeExceptions();
 testCheckFrontmatter();
+testCheckFrontmatterIdFollowsPath();
 testCheckGraph();
 testCheckImpact();
 
@@ -84,6 +89,7 @@ function testGeneratedArchitectureContract() {
   // Manifest v2
   const manifest = JSON.parse(read(root, "Docs/agent/manifest.json"));
   assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.projectType, "app", "a repository with src/ is an app");
   assert.ok(manifest.knowledgeIndex);
 }
 
@@ -257,9 +263,101 @@ function testAuditFlagsFileNames() {
   assert.equal(flagged.get("tiers-2.md"), "ordinal-file-name");
   assert.equal(flagged.get("notes.md"), "vague-file-name");
   assert.equal(flagged.get("01-intro"), "ordinal-file-name", "folders are checked once");
-  for (const fine of ["pricing-rules.md", "2026-10-16-churn-analysis.md", "postgres-15.md", "tiers.md", "README.md", "overview.md", "2026-10-16-Some_Plan.md", "00_overview.md", "01_data_completeness.md"]) {
+  assert.equal(flagged.get("overview.md"), "generic-file-name", "a generic word alone is not specific");
+  for (const fine of ["pricing-rules.md", "2026-10-16-churn-analysis.md", "postgres-15.md", "tiers.md", "README.md", "2026-10-16-Some_Plan.md", "00_overview.md", "01_data_completeness.md"]) {
     assert.ok(!flagged.has(fine), `${fine} must not be flagged`);
   }
+}
+
+function testAuditFlagsKnowledgeStructure() {
+  const root = makeTempProject("knowledge-structure");
+  const crowded = path.join(root, "Docs/knowledge/sourcing");
+  const roomy = path.join(root, "Docs/knowledge/sourcing/supplier-outreach");
+  fs.mkdirSync(roomy, { recursive: true });
+  const body = "# Doc\n\nText.\n";
+  for (const name of ["invoices.md", "baseline-and-savings.md", "rfq-line-precision.md", "record-linking-keys.md", "invoice-extraction.md", "supplier-qualification.md"]) {
+    fs.writeFileSync(path.join(crowded, name), body);
+  }
+  fs.writeFileSync(path.join(crowded, "README.md"), body);
+  for (const name of ["outreach-rules.md", "invoice-extraction.md", "mail-route.md", "excluded-suppliers.md", "README.md"]) {
+    fs.writeFileSync(path.join(roomy, name), body);
+  }
+
+  const findings = auditJson(root);
+  const crowdedFolders = findings.filter((f) => f.code === "crowded-knowledge-folder").map((f) => f.file);
+  assert.deepEqual(crowdedFolders, [path.relative(root, crowded)], "six leaves are crowded, five plus README are not");
+  const generic = findings.filter((f) => f.code === "generic-file-name").map((f) => path.basename(f.file));
+  assert.deepEqual(generic, ["invoices.md"]);
+  const duplicates = findings.filter((f) => f.code === "duplicate-file-name");
+  assert.equal(duplicates.length, 1);
+  assert.match(duplicates[0].message, /invoice-extraction\.md" exists 2 times/);
+  assert.ok(!findings.some((f) => f.code === "missing-required-file" && /human\/setup\.md/.test(f.file)), "a workspace without code needs no app scaffold");
+}
+
+function testAuditRequiredFilesFollowProjectType() {
+  const root = makeTempProject("project-type");
+  fs.mkdirSync(path.join(root, "Docs/agent"), { recursive: true });
+  const missing = () => auditJson(root).filter((f) => f.code === "missing-required-file").map((f) => f.file.split(path.sep).join("/"));
+
+  assert.deepEqual(missing().sort(), ["Docs/README.md", "Docs/agent/context-map.md", "Docs/agent/gaps.md", "Docs/agent/knowledge-index.json"]);
+
+  fs.writeFileSync(path.join(root, "Docs/agent/manifest.json"), JSON.stringify({ schemaVersion: 2, projectType: "app", routeIndexes: [] }));
+  assert.ok(missing().includes("Docs/human/setup.md"), "projectType app requires the app scaffold");
+
+  fs.writeFileSync(path.join(root, "Docs/agent/manifest.json"), JSON.stringify({ schemaVersion: 2, projectType: "app", requiredDocs: ["README.md"], routeIndexes: [] }));
+  assert.deepEqual(missing(), ["Docs/README.md"], "requiredDocs replaces the list");
+}
+
+function testAuditChecksCanvases() {
+  const root = makeTempProject("canvases");
+  const canvases = path.join(root, "Docs/playbook/canvases");
+  const topicFolder = path.join(canvases, "data-prep");
+  const stepFolder = path.join(canvases, "batch1-enrichment");
+  const knowledge = path.join(root, "Docs/knowledge/findings");
+  fs.mkdirSync(topicFolder, { recursive: true });
+  fs.mkdirSync(stepFolder, { recursive: true });
+  fs.mkdirSync(knowledge, { recursive: true });
+  const status = "# Canvas\n\n> **Status:** Brainstorming\n\n";
+  const measurements = Array.from({ length: 12 }, (_, index) => `| row ${index} | ${1200 + index * 7} |`).join("\n");
+
+  fs.writeFileSync(path.join(knowledge, "invoice-extraction-quality.md"), `# Finding\n\n${measurements}\n`);
+  fs.writeFileSync(path.join(topicFolder, "README.md"), status);
+  fs.writeFileSync(path.join(topicFolder, "requirements.md"), `${status}${measurements}\n`);
+  fs.writeFileSync(path.join(topicFolder, "outlook.md"), `# Outlook\n\n${"word ".repeat(1600)}\n`);
+  fs.writeFileSync(path.join(stepFolder, "00_overview.md"), status);
+  fs.writeFileSync(path.join(stepFolder, "01_invoice_source.md"), `${status}See the finding for 1234 and 5678.\n`);
+  fs.mkdirSync(path.join(stepFolder, "02_batch_rebuild"));
+  fs.writeFileSync(path.join(stepFolder, "02_batch_rebuild", "00_overview.md"), status);
+
+  const findings = auditJson(root);
+  const codesFor = (name) => findings.filter((f) => f.file.split(path.sep).join("/").endsWith(name)).map((f) => f.code).sort();
+  assert.deepEqual(codesFor("canvases/data-prep"), ["canvas-folder-missing-overview"]);
+  assert.deepEqual(codesFor("data-prep/README.md"), ["canvas-unnumbered-file"]);
+  assert.deepEqual(codesFor("data-prep/requirements.md"), ["canvas-shares-numbers", "canvas-unnumbered-file"]);
+  assert.deepEqual(codesFor("data-prep/outlook.md"), ["canvas-missing-status", "canvas-unnumbered-file", "oversized-canvas"]);
+  for (const fine of ["batch1-enrichment", "batch1-enrichment/00_overview.md", "batch1-enrichment/01_invoice_source.md", "02_batch_rebuild/00_overview.md"]) {
+    assert.deepEqual(codesFor(fine), [], `${fine} must pass`);
+  }
+}
+
+function testAuditSizeExceptions() {
+  const root = makeTempProject("size-exceptions");
+  const dir = path.join(root, "Docs/knowledge/findings");
+  fs.mkdirSync(dir, { recursive: true });
+  const doc = (words, extra) => ["---", "id: findings.snapshot", "type: summary", "authority: canonical", ...extra, "---", "# Snapshot", "", "word ".repeat(words)].join("\n");
+  const marked = ["sizeException: research snapshot", "revisitWhen:", "  - batch 2 delivered"];
+
+  fs.writeFileSync(path.join(dir, "folder-inventory.md"), doc(4000, []));
+  fs.writeFileSync(path.join(dir, "supplier-snapshot.md"), doc(4000, marked));
+  fs.writeFileSync(path.join(dir, "enrichment-snapshot.md"), doc(7000, marked));
+  fs.writeFileSync(path.join(dir, "half-marked-snapshot.md"), doc(4000, ["sizeException: research snapshot"]));
+
+  const findings = auditJson(root);
+  const codeFor = (name) => findings.find((f) => f.file.endsWith(name) && /oversized-doc|size-exception/.test(f.code))?.code;
+  assert.equal(codeFor("folder-inventory.md"), "oversized-doc");
+  assert.equal(codeFor("supplier-snapshot.md"), "size-exception");
+  assert.equal(codeFor("enrichment-snapshot.md"), "size-exception-over-ceiling");
+  assert.equal(codeFor("half-marked-snapshot.md"), "oversized-doc", "an exception without revisitWhen is no exception");
 }
 
 function auditJson(root) {
@@ -309,6 +407,29 @@ function testCheckFrontmatter() {
     output.findings.some((f) => f.code === "missing-frontmatter"),
     "expected check-frontmatter to flag missing frontmatter"
   );
+}
+
+function testCheckFrontmatterIdFollowsPath() {
+  const root = makeTempProject("id-follows-path");
+  const dir = path.join(root, "Docs/knowledge/findings");
+  fs.mkdirSync(dir, { recursive: true });
+  const doc = (id, extra = []) => ["---", `id: ${id}`, "type: decision", "authority: canonical", ...extra, "---", "# Doc"].join("\n");
+  fs.writeFileSync(path.join(dir, "README.md"), doc("findings"));
+  fs.writeFileSync(path.join(dir, "invoice-extraction-quality.md"), doc("findings.invoice-extraction-quality"));
+  fs.writeFileSync(path.join(dir, "invoice-source.md"), doc("findings.invoicesource"));
+  fs.writeFileSync(path.join(dir, "classification-design.md"), doc("findings.classification-design", ["status: deferred"]));
+
+  const result = spawnSync("node", [
+    path.join(repoRoot, "skills/docdriven-audit/scripts/check-frontmatter.mjs"),
+    "--root", root, "--format", "json"
+  ], { encoding: "utf8" });
+  const findings = JSON.parse(result.stdout).findings;
+  const codesFor = (name) => findings.filter((f) => f.file.endsWith(name)).map((f) => f.code).filter((code) => code !== "missing-sourceVersion" && code !== "id-not-in-index");
+
+  assert.deepEqual(codesFor("README.md"), [], "an overview carries its folder's ID");
+  assert.deepEqual(codesFor("invoice-extraction-quality.md"), [], "hyphens stay in the ID");
+  assert.deepEqual(codesFor("invoice-source.md"), ["id-path-mismatch"], "a dropped hyphen is a mismatch");
+  assert.deepEqual(codesFor("classification-design.md"), ["deferred-decision-missing-revisit"]);
 }
 
 function testCheckGraph() {

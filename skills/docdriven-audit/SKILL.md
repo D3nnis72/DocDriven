@@ -14,8 +14,12 @@ Use this skill to check documentation drift and knowledge graph integrity.
 | **Project audit** | The repository | Is the knowledge graph structurally sound and are docs current? |
 | **Change-scoped audit** | A diff range | Which docs stopped being true because of this change? |
 | **Maintainability pass** | Docs in scope | Which docs are oversized and need a split before or during updates? |
+| **Structure pass** | Every knowledge folder and canvas | Does the hierarchy still fit the project's current direction? |
 
-Project audit is the default. Use change-scoped audit when a plan's final work
+Project audit is the default. Run a structure pass after a direction change
+(see Hierarchy Growth in `_shared/docdriven-structure.md`): its scope is the
+whole tree, not the diff. Report `crowded-knowledge-folder`, `split-required`,
+`size-exception`, naming, and canvas findings, then propose the regrouping. Use change-scoped audit when a plan's final work
 unit needs the list of docs to update, or whenever someone asks "what docs does
 this change affect?". Both modes report; neither updates docs unless asked.
 
@@ -114,11 +118,19 @@ Routes:
 - Validation is declared and not weak
 
 Content:
-- Size targets met
+- Required files match the project type (`projectType` or `requiredDocs` in the manifest)
+- Size targets met; size exceptions marked and under 6,000 words
 - Oversized knowledge docs flagged with split guidance
+- No knowledge folder with six or more leaves
+- Knowledge file names specific and unique in the tree
 - No placeholder text left
 - tmp content flagged
 - Architecture contract complete
+
+Canvases (`playbook/canvases/`):
+- Status header, at most 1,500 words per file
+- Folder shape: `00_overview.md` plus numbered work steps
+- No numbers copied from a knowledge doc (heuristic)
 
 ## Maintainability Pass
 
@@ -165,6 +177,7 @@ Oversized docs report format (append to change-scoped audit or standalone):
 ## References
 
 - Read `_shared/audit-checklist.md` for the full check list.
+- Read `_shared/docdriven-structure.md` before a structure pass.
 - Read `_shared/doc-splitting.md` for split heuristics and propagation.
 - Read `_shared/knowledge-schema.md` for frontmatter validation rules.
 - Read `_shared/agent-operating-contract.md` for route protocol.

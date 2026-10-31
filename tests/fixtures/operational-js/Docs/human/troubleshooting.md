@@ -1,5 +1,5 @@
 ---
-id: human.operations.troubleshooting
+id: human.troubleshooting
 type: view
 derivedFrom:
   - operations.general

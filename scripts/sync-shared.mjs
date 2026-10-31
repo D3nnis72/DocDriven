@@ -30,6 +30,7 @@ const vendorMap = {
   "docdriven-audit": [
     "agent-operating-contract.md",
     "audit-checklist.md",
+    "docdriven-structure.md",
     "doc-splitting.md",
     "knowledge-schema.md",
     "operational-scan.mjs"

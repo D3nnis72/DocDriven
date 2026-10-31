@@ -37,6 +37,13 @@ export function scanProject(rootDir) {
   return project;
 }
 
+// "app" when the repository carries code evidence; a docs, research or analysis
+// repository without it is a "workspace" and does not need the app scaffold.
+export function inferProjectType(project) {
+  const hasCode = project.packageManager !== "not detected" || project.sourceDirs.length > 0;
+  return hasCode ? "app" : "workspace";
+}
+
 export function listDetectedSignals(signals) {
   return Object.entries(signals)
     .filter(([name, value]) => name !== "data" && value.detected)

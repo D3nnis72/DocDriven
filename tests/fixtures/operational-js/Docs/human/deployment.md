@@ -1,5 +1,5 @@
 ---
-id: human.operations.deployment
+id: human.deployment
 type: view
 derivedFrom:
   - operations.general

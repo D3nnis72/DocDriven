@@ -1,5 +1,5 @@
 ---
-id: human.operations.services
+id: human.services
 type: view
 derivedFrom:
   - operations.general

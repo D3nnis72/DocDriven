@@ -34,8 +34,14 @@ DocDriven is Documentation Driven Development for agents and humans.
 - Never independently establish truth in a derived view.
 - Reference knowledge IDs instead of duplicating content.
 - Never create a knowledge doc for something fully expressed in code. Knowledge exists only for what grounding sources can't express (decisions, constraints, boundaries, strategies, ownership rules).
-- Name files after the concern they answer, in lowercase kebab-case. No order
-  prefixes, no `part-2` (see `_shared/knowledge-schema.md`).
+- Name files after the concern they answer, in lowercase kebab-case. A name is
+  specific without its folder: subject plus aspect, usually two to four words,
+  never a generic word alone (`invoice-extraction-quality.md`, not
+  `invoices.md`). No order prefixes, no `part-2` (see `_shared/knowledge-schema.md`).
+- The ID mirrors the path. Move or rename only with the rename procedure in
+  `_shared/knowledge-schema.md`.
+- Canvases are temporary and hold open work steps only. Rules go to the owner
+  when settled, numbers stay in the finding; the canvas links both.
 - No numbers in headings and no positional references ("see point 7"). Link
   knowledge IDs. Numbers are only for ordered steps in procedure docs.
 - Follow the project's documented architecture and coding style.
@@ -76,13 +82,14 @@ evidence and reader needs.
 
 ## Hierarchy Growth
 
-When a knowledge folder accumulates 6+ leaf docs at the same level, group
-related docs into a subfolder and create an overview doc for that subfolder.
-This creates the navigable hierarchy that enables progressive routing.
+A knowledge folder with six or more leaf docs next to its `README.md` must be
+grouped into subfolders with `README.md` overviews, in the same task that adds
+the sixth leaf. The audit reports `crowded-knowledge-folder`.
 
-**Trigger:** When creating a new knowledge doc or during propagation, if the
-target folder has 6+ siblings, consider whether a group shares a concern that
-deserves its own subfolder + overview.
+**Direction change → structure pass.** When the project changes direction (new
+goal or deliverable, replaced approach or pipeline, re-cut scope), check every
+knowledge folder, not only the docs in the diff. Checklist in
+`_shared/docdriven-structure.md` under Hierarchy Growth.
 
 **Test for a knowledge doc's existence:**
 1. Can I find this fact by reading code? → No doc. Use `groundedIn` to point at code.
@@ -126,11 +133,16 @@ as it applies beyond this turn. Record it without being asked.
 1. When the user states a rule, decision, or process change, or points out a
    mistake in a flow, write it to its canonical owner in the same task. For a
    mistake, fix the flow or skill that allowed it, not only the output.
-2. Use the project's own home: the flow doc, the owning knowledge doc, or
-   `AGENTS.md` for working rules. Prefer repo files over private agent memory so
-   the user and every agent can read the rule.
+2. Use the project's own home: the subject's owning knowledge doc (or a
+   `type: decision` doc in its folder, see Decision Docs in
+   `_shared/knowledge-schema.md`), the flow doc, or `AGENTS.md` for working
+   rules. Prefer repo files over private agent memory so the user and every
+   agent can read the rule. A decision ledger in `playbook/` or a canvas may
+   hold history and reasoning and link the owner; it is never where the rule
+   lives.
 3. Mark its status: decided, provisional (name the open question and who
-   decides), or time-limited (name the date to revisit).
+   decides), deferred (name the `revisitWhen` trigger and keep the draft), or
+   time-limited (name the date to revisit).
 4. Name the file and section in the final reply. If you recorded nothing, say
    why.
 5. Do not record a one-off instruction for the current task ("only October
@@ -149,7 +161,8 @@ into a log, and the user can no longer see what is open.
    does not, restructure before you add anything.
 3. When several canvases or plans cover one subject, give them one overview that
    says which file owns what, or one folder that opens with the overview. Do not
-   add another sibling.
+   add another sibling. A canvas folder is cut by work steps, never by topic
+   (Playbook `brainstorming`).
 4. A human overview or README starts with what it is and the command or entry
    point to start. Short paragraphs, not blocks of bullets nobody reads.
 
@@ -165,7 +178,9 @@ Findings from an analysis or investigation do not get a new document by default.
    merge it instead of adding a sibling.
 3. A report holds the question, the answer, and the evidence. It references
    canonical IDs instead of restating them.
-4. `Docs/agent/gaps.md` lists open uncertainty. Remove items once they are
+4. Numbers and measurements live in the finding or owner that produced them.
+   Canvases, plans, and status docs link them instead of copying tables.
+5. `Docs/agent/gaps.md` lists open uncertainty. Remove items once they are
    resolved or moved into their owner. Do not use it as a changelog.
 
 ## Completion Evidence
@@ -190,7 +205,8 @@ Oversized knowledge files defeat routing. Before appending to a knowledge doc:
 
 - Multiple independently routable concerns → split immediately, any size.
 - Over 3,000 words → split by default unless a documented exception applies
-  (brainstorm, research snapshot, ledger, historical reference).
+  (brainstorm, research snapshot, ledger, historical reference), marked with
+  `sizeException` and `revisitWhen`. No exception passes 6,000 words.
 - 1,500–3,000 words → review during maintainability pass; split only if concerns
   diverge.
 - Parent keeps the stable ID and becomes `type: overview` with `includes`.
