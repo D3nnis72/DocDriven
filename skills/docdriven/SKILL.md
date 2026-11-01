@@ -175,13 +175,37 @@ Findings from an analysis or investigation do not get a new document by default.
    files) from there as evidence.
 2. Write a dated report only for a bounded result that people will cite on its
    own. Look for an earlier report on the same subject first and extend or
-   merge it instead of adding a sibling.
+   rewrite it around the current answer instead of adding a sibling. Replace
+   superseded results; do not append a new result below contradictory old text.
 3. A report holds the question, the answer, and the evidence. It references
    canonical IDs instead of restating them.
 4. Numbers and measurements live in the finding or owner that produced them.
    Canvases, plans, and status docs link them instead of copying tables.
 5. `Docs/agent/gaps.md` lists open uncertainty. Remove items once they are
    resolved or moved into their owner. Do not use it as a changelog.
+
+## Replace Superseded Content
+
+New evidence triggers a removal pass in the canonical doc and its affected
+consumers, including canvases, status pages, question lists, specs and plans.
+Read the whole affected document before adding the update. Replace old claims,
+counts, pending approvals and completed work that the new evidence supersedes.
+Marking them "outdated" and appending the correction is not enough.
+
+Keep an older result only when it still serves a concrete current purpose:
+explaining an unresolved risk, a regression, a decision or a required historical
+comparison. Keep only the context needed for that purpose and its source. "We
+might need it someday" is not a retention reason. Git and linked run artifacts
+hold the history; do not create an archive doc or a new history section just to
+avoid deleting stale prose. Preserve still-valid limitations, open work and
+applicable decisions. Do not delete original evidence, run artifacts or other
+people's changes as part of prose cleanup.
+
+After rewriting, search for removed claims and heading anchors across affected
+consumers. Remove obsolete tasks and whole docs that no longer have a purpose;
+update links to surviving owners or evidence. Before finishing, read the result
+as one current answer: no conflicting statuses, duplicate snapshots or completed
+steps presented as pending. A smaller current doc is a successful update.
 
 ## Completion Evidence
 
