@@ -42,6 +42,8 @@ DocDriven is Documentation Driven Development for agents and humans.
   `_shared/knowledge-schema.md`.
 - Canvases are temporary and hold open work steps only. Rules go to the owner
   when settled, numbers stay in the finding; the canvas links both.
+- If the `visual-markdown` skill is available, load it before writing human
+  docs, status pages and canvases. Knowledge docs stay plain Markdown.
 - No numbers in headings and no positional references ("see point 7"). Link
   knowledge IDs. Numbers are only for ordered steps in procedure docs.
 - Follow the project's documented architecture and coding style.
