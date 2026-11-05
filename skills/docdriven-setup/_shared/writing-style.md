@@ -24,10 +24,28 @@
 - Sections that move into another file lose their old numbers, and positional
   references to them are replaced across the whole package.
 
-## Human-facing docs
+## Problem collections and review overviews
+
+A problem entry contains a concrete failure and the desired behaviour, usually in
+one short paragraph. Put evidence directly below it. If a missing fact changes the
+fix or priority, add that specific open question. Keep confirmed causes and partial
+fixes with their remaining scope; link detailed investigations to their owner.
+
+An overview entry contains a short title, priority, one sentence explaining the
+impact, and a link to the problem. The detail page owns reproduction, causes and
+acceptance checks.
+
+For example: “The supplier list cannot be sorted by name or spend. Make the
+columns sortable in both directions across all filtered pages.” A screenshot's
+unrelated empty cells do not need a second investigation in this entry.
+
+These entries are complete when the reader can identify the problem and expected
+result. Their length follows the information needed, not the human-file targets.
+
+## Explanations and briefings
 
 The rules above keep docs short. For docs that people read to learn a domain
-(`Docs/human/`, question lists, briefings), short is not enough. Agent routing
+(domain guides and briefings), short is not enough. Agent routing
 docs stay tight.
 
 - Define every domain term, acronym, and code on first use, or link the
