@@ -628,12 +628,15 @@ function checkCanvasFile(file, knowledgeNumbers) {
   const relative = path.relative(root, file);
   const content = fs.readFileSync(file, "utf8");
   const head = content.replace(/^---[\s\S]*?---/, "").split(/\r?\n/).slice(0, 40).join("\n");
-  if (!/^\s*>?\s*\*\*Status(?::\*\*|\*\*\s*:)/m.test(head)) {
+  const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] || "";
+  const visual = frontmatter.match(/^visual:[ \t]*\r?\n((?:[ \t]+[^\r\n]*(?:\r?\n|$))*)/m)?.[1] || "";
+  const visualStatus = visual.match(/^[ \t]+status:[ \t]*([^\r\n]*)/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
+  if (!visualStatus && !/^\s*>?\s*\*\*Status(?::\*\*|\*\*\s*:)/m.test(head)) {
     findings.push({
       severity: "warning",
       code: "canvas-missing-status",
       file: relative,
-      message: "Canvas has no status header (> **Status:** ...). Every canvas file starts with one."
+      message: "Canvas has no status. Set visual.status in front matter or add a status header (> **Status:** ...)."
     });
   }
 

@@ -329,13 +329,19 @@ function testAuditChecksCanvases() {
   fs.mkdirSync(path.join(stepFolder, "02_batch_rebuild"));
   fs.writeFileSync(path.join(stepFolder, "02_batch_rebuild", "00_overview.md"), status);
 
+  fs.writeFileSync(path.join(stepFolder, "02_visual_status.md"), "---\nvisual:\n  status: Open\n---\n# Canvas\n");
+  fs.writeFileSync(path.join(stepFolder, "03_empty_status.md"), "---\nvisual:\n  status: ''\n---\n# Canvas\n");
+  fs.writeFileSync(path.join(stepFolder, "04_other_status.md"), "---\nother:\n  status: Open\n---\n# Canvas\n");
+
   const findings = auditJson(root);
   const codesFor = (name) => findings.filter((f) => f.file.split(path.sep).join("/").endsWith(name)).map((f) => f.code).sort();
   assert.deepEqual(codesFor("canvases/data-prep"), ["canvas-folder-missing-overview"]);
   assert.deepEqual(codesFor("data-prep/README.md"), ["canvas-unnumbered-file"]);
   assert.deepEqual(codesFor("data-prep/requirements.md"), ["canvas-shares-numbers", "canvas-unnumbered-file"]);
   assert.deepEqual(codesFor("data-prep/outlook.md"), ["canvas-missing-status", "canvas-unnumbered-file", "oversized-canvas"]);
-  for (const fine of ["batch1-enrichment", "batch1-enrichment/00_overview.md", "batch1-enrichment/01_invoice_source.md", "02_batch_rebuild/00_overview.md"]) {
+  assert.deepEqual(codesFor("03_empty_status.md"), ["canvas-missing-status"]);
+  assert.deepEqual(codesFor("04_other_status.md"), ["canvas-missing-status"]);
+  for (const fine of ["02_visual_status.md", "batch1-enrichment", "batch1-enrichment/00_overview.md", "batch1-enrichment/01_invoice_source.md", "02_batch_rebuild/00_overview.md"]) {
     assert.deepEqual(codesFor(fine), [], `${fine} must pass`);
   }
 }
